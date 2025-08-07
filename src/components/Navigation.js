@@ -7,16 +7,15 @@ import {
     AlertTriangle,
     BarChart3,
     Settings as SettingsIcon,
-    LogOut
+    LogOut,
 } from "lucide-react";
 
 const Navigation = ({ user, currentPage, onPageChange, onLogout }) => {
-    // Define pages based on role
     const driverPages = [
         { id: "driver-dashboard", label: "Dashboard", icon: LayoutDashboard },
         { id: "map-view", label: "Map View", icon: Map },
         { id: "history", label: "History", icon: History },
-        { id: "alerts", label: "Alerts", icon: AlertTriangle }
+        { id: "alerts", label: "Alerts", icon: AlertTriangle },
     ];
 
     const adminPages = [
@@ -24,7 +23,7 @@ const Navigation = ({ user, currentPage, onPageChange, onLogout }) => {
         { id: "fleet-map", label: "Fleet Map", icon: Map },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
         { id: "alerts", label: "Alerts", icon: AlertTriangle },
-        { id: "settings", label: "Settings", icon: SettingsIcon }
+        { id: "settings", label: "Settings", icon: SettingsIcon },
     ];
 
     const pages = user.role === "DRIVER" ? driverPages : adminPages;
@@ -48,8 +47,8 @@ const Navigation = ({ user, currentPage, onPageChange, onLogout }) => {
                                     key={page.id}
                                     onClick={() => onPageChange(page.id)}
                                     className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium ${currentPage === page.id
-                                            ? "bg-blue-500 text-white"
-                                            : "text-gray-600 hover:bg-gray-100"
+                                        ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                                        : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
                                         }`}
                                 >
                                     <Icon size={18} />
@@ -64,11 +63,14 @@ const Navigation = ({ user, currentPage, onPageChange, onLogout }) => {
                         <div className="text-right">
                             <p className="text-sm font-medium">Welcome, {user.username}</p>
                             <span
-                                className={`inline-block text-xs px-2 py-1 rounded ${user.role === "ADMIN" ? "bg-purple-100 text-purple-600" : "bg-green-100 text-green-600"
+                                className={`inline-block text-xs px-2 py-1 rounded ${user.role === "ADMIN"
+                                    ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
+                                    : "bg-[var(--secondary)] text-[var(--secondary-foreground)]"
                                     }`}
                             >
                                 {user.role}
                             </span>
+
                         </div>
                         <button
                             onClick={onLogout}
@@ -90,8 +92,8 @@ const Navigation = ({ user, currentPage, onPageChange, onLogout }) => {
                             key={page.id}
                             onClick={() => onPageChange(page.id)}
                             className={`flex flex-col items-center px-3 py-2 text-xs ${currentPage === page.id
-                                    ? "text-blue-600 font-semibold"
-                                    : "text-gray-500"
+                                ? "text-blue-600 font-semibold"
+                                : "text-gray-500"
                                 }`}
                         >
                             <Icon size={20} />
