@@ -135,6 +135,7 @@ const DriverDashboard = ({ user }) => {
                             style={{ width: `${telemetry.fuelLevel}%` }}
                         ></div>
                     </div>
+                    <p className="text-sm text-gray-500">Min. Fuel limit: 25%</p>
                 </div>
 
                 {/* Engine Temp */}
