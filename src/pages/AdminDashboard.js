@@ -9,35 +9,35 @@ const AdminDashboard = () => {
     // Sample Vehicle Data
     const generateVehicles = () => [
         {
-            id: "VH001",
+            id: "CAR001",
             driver: "John Doe",
             location: "New York",
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
             status: "active",
-            lastUpdate: new Date().toLocaleTimeString()
+            lastUpdate: new Date().toLocaleTimeString(),
         },
         {
-            id: "VH002",
+            id: "CAR002",
             driver: "Alice Smith",
             location: "Chicago",
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
             status: "idle",
-            lastUpdate: new Date().toLocaleTimeString()
+            lastUpdate: new Date().toLocaleTimeString(),
         },
         {
-            id: "VH003",
+            id: "CAR003",
             driver: "Mike Johnson",
             location: "Los Angeles",
-            speed: Math.floor(Math.random() * 80),
+            speed: Math.floor(Math.random() * 100),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
             status: "maintenance",
-            lastUpdate: new Date().toLocaleTimeString()
-        }
+            lastUpdate: new Date().toLocaleTimeString(),
+        },
     ];
 
     useEffect(() => {
@@ -53,9 +53,10 @@ const AdminDashboard = () => {
         }
     }, [autoRefresh]);
 
-    const handleRefresh = () => {
+    // Handle manual refresh
+    function handleRefresh() {
         setVehicles(generateVehicles());
-    };
+    }
 
     const filteredVehicles = vehicles.filter(
         (v) =>
@@ -87,33 +88,6 @@ const AdminDashboard = () => {
         <div className="p-6 bg-gray-100 min-h-screen">
             <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
-            {/* Search & Refresh */}
-            <div className="flex justify-between items-center mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by ID, driver or location"
-                    className="border px-4 py-2 rounded w-1/2"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <div>
-                    <button
-                        className="bg-blue-500 text-white px-4 py-2 rounded mr-3"
-                        onClick={handleRefresh}
-                    >
-                        Refresh
-                    </button>
-                    <label className="ml-2">
-                        <input
-                            type="checkbox"
-                            checked={autoRefresh}
-                            onChange={(e) => setAutoRefresh(e.target.checked)}
-                        />{" "}
-                        Auto-refresh
-                    </label>
-                </div>
-            </div>
-
             {/* Dashboard Cards */}
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white p-4 rounded shadow">
@@ -134,11 +108,22 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
+            {/* Search & Refresh */}
+            <div className="flex justify-between items-center mb-6">
+                <input
+                    type="text"
+                    placeholder="Search by ID, driver or location"
+                    className="border px-4 py-2 rounded w-1/2"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
             {/* Vehicle Table */}
             <table className="w-full bg-white shadow rounded">
                 <thead>
                     <tr className="bg-gray-200 text-left">
-                        <th className="p-3">Vehicle ID</th>
+                        <th className="p-3">Car ID</th>
                         <th className="p-3">Driver</th>
                         <th className="p-3">Location</th>
                         <th className="p-3">Speed (mph)</th>
@@ -149,31 +134,28 @@ const AdminDashboard = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredVehicles.map((v, index) => (
-                        <tr key={index} className="border-b">
+                    {filteredVehicles.map((v, i) => (
+                        <tr key={i} className="border-b">
                             <td className="p-3">{v.id}</td>
                             <td className="p-3">{v.driver}</td>
                             <td className="p-3 flex items-center">
-                                <FaMapMarkerAlt className="text-blue-500 mr-2" /> {v.location}
+                                <FaMapMarkerAlt className="text-blue-500 mr-2" />
+                                {v.location}
                             </td>
                             <td className="p-3">{v.speed}</td>
-                            <td className="p-3 flex items-center">
+                            <td className="p-3 items-center">
                                 <FaGasPump className="mr-2" />
                                 <span style={{ color: getFuelColor(v.fuel) }}>{v.fuel}%</span>
                             </td>
-                            <td className="p-3 flex items-center">
+                            <td className="p-3 items-center">
                                 <FaThermometerHalf className="mr-2" />
                                 <span style={{ color: getTempColor(v.temp) }}>{v.temp}°F</span>
                             </td>
                             <td className="p-3">
-                                <span
-                                    className={`px-2 py-1 rounded text-white ${v.status === "active"
-                                        ? "bg-green-500"
-                                        : v.status === "idle"
-                                            ? "bg-yellow-500"
-                                            : "bg-gray-500"
-                                        }`}
-                                >
+                                <span className={`px-2 py-1 rounded text-white ${v.status === "active" ? "bg-green-500"
+                                    : v.status === "idle" ? "bg-yellow-500"
+                                        : "bg-red-500"
+                                    }`}>
                                     {v.status}
                                 </span>
                             </td>
@@ -181,6 +163,7 @@ const AdminDashboard = () => {
                         </tr>
                     ))}
                 </tbody>
+
             </table>
         </div>
     );

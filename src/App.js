@@ -11,6 +11,9 @@ import SettingsPage from "./pages/SettingsPage";
 import Navigation from "./components/Navigation";
 
 function AppWrapper() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
+
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
 
@@ -58,14 +61,14 @@ function AppWrapper() {
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             ) : (
-                <div>
+                <div className="main-layout">
                     <Navigation
                         user={user}
                         onLogout={handleLogout}
                         onPageChange={handlePageChange}
                         currentPage="" // optional, can be tracked with useLocation
                     />
-                    <div className="p-4">
+                    <div className="page-content">
                         <Routes>
                             {user.role === "ADMIN" ? (
                                 <>

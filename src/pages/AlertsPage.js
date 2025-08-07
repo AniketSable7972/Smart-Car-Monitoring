@@ -17,7 +17,7 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
     const generateAlerts = () => [
         {
             id: "A001",
-            vehicleId: "VH001",
+            vehicleId: "CAR001",
             driver: "John Doe",
             type: "fuel",
             severity: "high",
@@ -28,7 +28,7 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         },
         {
             id: "A002",
-            vehicleId: "VH002",
+            vehicleId: "CAR002",
             driver: "Alice Smith",
             type: "temperature",
             severity: "critical",
@@ -39,7 +39,7 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         },
         {
             id: "A003",
-            vehicleId: "VH003",
+            vehicleId: "CAR003",
             driver: "Mike Johnson",
             type: "maintenance",
             severity: "medium",

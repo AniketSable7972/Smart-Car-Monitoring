@@ -1,20 +1,21 @@
 import React, { useState } from "react";
-import { Calendar, Download, MapPin, Fuel, Gauge, Timer } from "lucide-react";
+import { Calendar, Download, MapPin, Fuel, Gauge } from "lucide-react";
 
 const HistoryPage = ({ user }) => {
     const [timeFilter, setTimeFilter] = useState("30days");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
 
-    // Sample Trip Data
     const trips = [
         {
             id: "TRP001",
             date: "2025-08-01 09:30",
             startLocation: "New York, NY",
             endLocation: "Philadelphia, PA",
-            distance: 95, // miles
+            distance: 95,
             duration: "1h 45m",
             avgSpeed: 54,
-            fuelUsed: 4.5, // gallons
+            fuelUsed: 4.5,
             status: "completed"
         },
         {
@@ -41,17 +42,15 @@ const HistoryPage = ({ user }) => {
         }
     ];
 
-    // Conversion constants
     const GALLON_TO_LITER = 3.78541;
     const MILE_TO_KM = 1.60934;
 
-    // Summary calculations (metric)
     const totalDistanceMiles = trips.reduce((acc, t) => acc + t.distance, 0);
     const totalDistanceKm = (totalDistanceMiles * MILE_TO_KM).toFixed(1);
     const totalFuelGallons = trips.reduce((acc, t) => acc + t.fuelUsed, 0);
     const totalFuelLiters = (totalFuelGallons * GALLON_TO_LITER).toFixed(1);
     const avgSpeed = (trips.reduce((acc, t) => acc + t.avgSpeed, 0) / trips.length).toFixed(1);
-    const efficiency = (totalDistanceKm / totalFuelLiters).toFixed(1); // km per liter
+    const efficiency = (totalDistanceKm / totalFuelLiters).toFixed(1);
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -65,6 +64,18 @@ const HistoryPage = ({ user }) => {
                 return <span className="border border-gray-400 text-gray-500 px-2 py-1 rounded text-xs">Unknown</span>;
         }
     };
+
+    const filteredTrips = trips.filter((trip) => {
+        const matchesSearch =
+            trip.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            trip.startLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            trip.endLocation.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus =
+            statusFilter === "all" || trip.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
@@ -126,7 +137,6 @@ const HistoryPage = ({ user }) => {
                     <p className="text-sm text-gray-500">Includes traffic stops</p>
                 </div>
             </div>
-
             {/* Trip History Table */}
             <div className="bg-white p-4 rounded shadow">
                 <div className="flex items-center mb-4">
@@ -138,6 +148,28 @@ const HistoryPage = ({ user }) => {
                         ? `Detailed history of all trips for vehicle ${user.assignedCarId}`
                         : "Detailed history of all trips"}
                 </p>
+
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                    <input
+                        type="text"
+                        placeholder="Search by location or ID..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="border px-3 py-2 rounded w-full md:w-1/2"
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="border px-3 py-2 rounded w-full md:w-1/4"
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="completed">Completed</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
@@ -153,20 +185,28 @@ const HistoryPage = ({ user }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {trips.map((trip) => (
-                                <tr key={trip.id} className="hover:bg-gray-100 text-sm">
-                                    <td className="p-2 border">{trip.id}</td>
-                                    <td className="p-2 border">{trip.date}</td>
-                                    <td className="p-2 border">
-                                        {trip.startLocation} → {trip.endLocation}
+                            {filteredTrips.length > 0 ? (
+                                filteredTrips.map((trip) => (
+                                    <tr key={trip.id} className="hover:bg-gray-100 text-sm">
+                                        <td className="p-2 border">{trip.id}</td>
+                                        <td className="p-2 border">{trip.date}</td>
+                                        <td className="p-2 border">
+                                            {trip.startLocation} → {trip.endLocation}
+                                        </td>
+                                        <td className="p-2 border">{trip.distance}</td>
+                                        <td className="p-2 border">{trip.duration}</td>
+                                        <td className="p-2 border">{trip.avgSpeed}</td>
+                                        <td className="p-2 border">{(trip.fuelUsed * GALLON_TO_LITER).toFixed(1)} L</td>
+                                        <td className="p-2 border">{getStatusBadge(trip.status)}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="text-center p-4 text-gray-500">
+                                        No trips match your filters.
                                     </td>
-                                    <td className="p-2 border">{trip.distance}</td>
-                                    <td className="p-2 border">{trip.duration}</td>
-                                    <td className="p-2 border">{trip.avgSpeed}</td>
-                                    <td className="p-2 border">{(trip.fuelUsed * GALLON_TO_LITER).toFixed(1)} L</td>
-                                    <td className="p-2 border">{getStatusBadge(trip.status)}</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -176,3 +216,4 @@ const HistoryPage = ({ user }) => {
 };
 
 export default HistoryPage;
+

@@ -10,7 +10,7 @@ import {
     Trash,
     ToggleLeft,
     ToggleRight,
-    
+
 } from "lucide-react";
 
 const SettingsPage = () => {

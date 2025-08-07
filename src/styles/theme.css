@@ -1,5 +1,6 @@
 :root {
   --font-size: 14px;
+  --header-height: 4rem;
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
@@ -93,7 +94,7 @@ body {
   line-height: 1.6;
   background-color: var(--background);
   color: var(--foreground);
-  padding-top: 4rem; /* Prevent collapse under navbar */
+  padding-top: var(--header-height);
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -124,6 +125,58 @@ button:hover {
   color: var(--secondary-foreground);
 }
 
+/* Glowing Button */
+.glow-button {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+.glow-button::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+  animation: pulse 2s infinite;
+  z-index: -1;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+/* Glowing Card */
+.glow-card {
+  border: 1px solid var(--border);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-card:hover {
+  box-shadow: 0 0 20px var(--ring);
+}
+
+/* Glowing Text */
+.glow-text {
+  color: var(--accent-foreground);
+  text-shadow: 0 0 5px var(--accent), 0 0 10px var(--accent);
+}
+
 /* Links */
 a {
   text-decoration: none;
@@ -139,5 +192,18 @@ a {
 
 /* Dashboard Wrapper Fix */
 .dashboard-wrapper {
-  padding-top: 4rem;
+  padding-top: 2rem;
+}
+
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-content {
+  flex: 1;
+  padding: 1rem;
+  background-color: var(--background);
+  color: var(--foreground);
 }

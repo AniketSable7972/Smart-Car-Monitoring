@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// MapView.js
+import React, { useState, useEffect, useRef } from "react";
 import {
     MapPin,
     RefreshCcw,
@@ -12,12 +13,12 @@ import {
 } from "lucide-react";
 
 const MapView = ({ user }) => {
-    const [vehicles, setVehicles] = useState([
+    const [vehicles] = useState([
         {
             id: "CAR001",
             driver: "John Doe",
             lat: 40.7128,
-            lng: -74.006,
+            lng: -74.0060,
             address: "New York, NY",
             speed: 55,
             fuelLevel: 70,
@@ -26,7 +27,7 @@ const MapView = ({ user }) => {
         },
         {
             id: "CAR002",
-            driver: "Jane Smith",
+            driver: "Alice Smith",
             lat: 34.0522,
             lng: -118.2437,
             address: "Los Angeles, CA",
@@ -37,7 +38,7 @@ const MapView = ({ user }) => {
         },
         {
             id: "CAR003",
-            driver: "Mike Ross",
+            driver: "Mike Johnson",
             lat: 41.8781,
             lng: -87.6298,
             address: "Chicago, IL",
@@ -50,23 +51,33 @@ const MapView = ({ user }) => {
 
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [zoom, setZoom] = useState(1);
+    const mapContainerRef = useRef(null);
 
-    // Filter vehicles based on user role
+    // filter vehicles by role
     const filteredVehicles =
         user.role === "DRIVER"
             ? vehicles.filter((v) => v.id === user.assignedCarId)
             : vehicles;
 
+    // auto-select for drivers
     useEffect(() => {
         if (user.role === "DRIVER" && filteredVehicles.length > 0) {
             setSelectedVehicle(filteredVehicles[0]);
         }
-    }, [user, filteredVehicles]);
+    }, [user.role, filteredVehicles]);
 
-    const handleSelectVehicle = (vehicle) => {
-        setSelectedVehicle(vehicle);
-    };
+    // bounding box
+    const lats = filteredVehicles.map((v) => v.lat);
+    const lngs = filteredVehicles.map((v) => v.lng);
+    const maxLat = Math.max(...lats);
+    const minLat = Math.min(...lats);
+    const maxLng = Math.max(...lngs);
+    const minLng = Math.min(...lngs);
 
+    // convert to 0–100%
+    const toPercent = (value, min, max) => ((value - min) / (max - min)) * 100;
+
+    // styling helpers
     const getStatusColor = (status) => {
         switch (status) {
             case "active":
@@ -79,21 +90,28 @@ const MapView = ({ user }) => {
                 return "bg-gray-500";
         }
     };
+    const getFuelColor = (fuel) =>
+        fuel > 50 ? "text-green-600" : fuel >= 25 ? "text-yellow-600" : "text-red-600";
+    const getTempColor = (t) =>
+        t <= 95 ? "text-green-600" : t <= 100 ? "text-yellow-600" : "text-red-600";
 
-    const getFuelColor = (fuel) => {
-        if (fuel > 50) return "text-green-600";
-        if (fuel >= 25) return "text-yellow-600";
-        return "text-red-600";
-    };
-
-    const getTempColor = (temp) => {
-        if (temp <= 95) return "text-green-600";
-        if (temp <= 100) return "text-yellow-600";
-        return "text-red-600";
+    // center selected marker in scrollable area
+    const centerMapOn = (vehicleId) => {
+        const container = mapContainerRef.current;
+        if (!container) return;
+        const marker = container.querySelector(`[data-id="${vehicleId}"]`);
+        if (marker) {
+            marker.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "center"
+            });
+        }
     };
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen flex flex-col md:flex-row gap-6">
+
             {/* Map Panel */}
             <div className="w-full md:w-2/3 bg-white rounded-lg shadow p-4 relative">
                 <div className="flex justify-between items-center mb-4">
@@ -109,37 +127,50 @@ const MapView = ({ user }) => {
                     </button>
                 </div>
 
-                {/* Simulated Map */}
+                {/* Scrollable Grid Container */}
                 <div
-                    className="relative w-full h-96 border rounded overflow-hidden bg-gray-50"
-                    style={{
-                        backgroundImage:
-                            "linear-gradient(0deg, transparent 24%, rgba(0,0,0,0.05) 25%), linear-gradient(90deg, transparent 24%, rgba(0,0,0,0.05) 25%)",
-                        backgroundSize: "40px 40px"
-                    }}
+                    ref={mapContainerRef}
+                    className="relative w-full h-96 border rounded overflow-auto bg-gray-50"
                 >
-                    {filteredVehicles.map((vehicle, index) => (
-                        <div
-                            key={vehicle.id}
-                            className={`absolute cursor-pointer ${getStatusColor(
-                                vehicle.status
-                            )} w-4 h-4 rounded-full`}
-                            style={{
-                                top: `${30 + index * 20}%`,
-                                left: `${40 + index * 10}%`
-                            }}
-                            title={vehicle.id}
-                            onClick={() => handleSelectVehicle(vehicle)}
-                        ></div>
-                    ))}
+                    {/* Scalable Content */}
+                    <div
+                        className="relative w-full h-full"
+                        style={{
+                            backgroundImage:
+                                "linear-gradient(0deg, transparent 24%, rgba(0,0,0,0.05) 25%)," +
+                                "linear-gradient(90deg, transparent 24%, rgba(0,0,0,0.05) 25%)",
+                            backgroundSize: "40px 40px",
+                            transform: `scale(${zoom})`,
+                            transformOrigin: "center center"
+                        }}
+                    >
+                        {filteredVehicles.map((v) => {
+                            const topPct = toPercent(maxLat - v.lat, maxLat - minLat);
+                            const leftPct = toPercent(v.lng, minLng, maxLng);
+                            return (
+                                <div
+                                    key={v.id}
+                                    data-id={v.id}
+                                    className={`absolute w-4 h-4 rounded-full cursor-pointer ${getStatusColor(v.status)}`}
+                                    style={{
+                                        top: `${topPct}%`,
+                                        left: `${leftPct}%`,
+                                        transform: "translate(-50%, -50%)"
+                                    }}
+                                    onClick={() => setSelectedVehicle(v)}
+                                    title={`${v.id}\n${v.address}`}
+                                />
+                            );
+                        })}
 
-                    {/* Crosshair */}
-                    <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                        <Crosshair className="text-gray-400" size={32} />
+                        {/* Crosshair */}
+                        <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                            <Crosshair className="text-gray-400" size={32} />
+                        </div>
                     </div>
                 </div>
 
-                {/* Map Controls */}
+                {/* Zoom Controls */}
                 <div className="absolute bottom-4 right-4 flex flex-col gap-2">
                     <button
                         className="bg-white p-2 rounded shadow hover:bg-gray-100"
@@ -162,34 +193,29 @@ const MapView = ({ user }) => {
 
             {/* Sidebar */}
             <div className="w-full md:w-1/3 flex flex-col gap-4">
-                {/* Fleet Vehicle List (Admin Only) */}
                 {user.role === "ADMIN" && (
                     <div className="bg-white p-4 rounded-lg shadow">
                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                             <Car size={18} /> Fleet Vehicles
                         </h3>
                         <ul className="space-y-2">
-                            {filteredVehicles.map((vehicle) => (
+                            {filteredVehicles.map((v) => (
                                 <li
-                                    key={vehicle.id}
-                                    onClick={() => handleSelectVehicle(vehicle)}
-                                    className={`p-3 rounded border cursor-pointer flex justify-between items-center ${selectedVehicle?.id === vehicle.id
-                                        ? "bg-blue-50 border-blue-500"
-                                        : "hover:bg-gray-50"
+                                    key={v.id}
+                                    onClick={() => setSelectedVehicle(v)}
+                                    className={`p-3 rounded border cursor-pointer flex justify-between items-center ${selectedVehicle?.id === v.id ? "bg-blue-50 border-blue-500" : "hover:bg-gray-50"
                                         }`}
                                 >
                                     <div>
-                                        <p className="font-medium">{vehicle.id}</p>
+                                        <p className="font-medium">{v.id}</p>
                                         <p className="text-sm text-gray-500 truncate">
-                                            {vehicle.driver} - {vehicle.address}
+                                            {v.driver} – {v.address}
                                         </p>
                                     </div>
                                     <span
-                                        className={`text-xs px-2 py-1 rounded ${getStatusColor(
-                                            vehicle.status
-                                        )} text-white`}
+                                        className={`text-xs px-2 py-1 rounded text-white ${getStatusColor(v.status)}`}
                                     >
-                                        {vehicle.status}
+                                        {v.status}
                                     </span>
                                 </li>
                             ))}
@@ -197,30 +223,27 @@ const MapView = ({ user }) => {
                     </div>
                 )}
 
-                {/* Selected Vehicle Details */}
                 {selectedVehicle && (
                     <div className="bg-white p-4 rounded-lg shadow">
                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                             <Car size={18} /> {selectedVehicle.id} Details
                         </h3>
                         <p className="text-gray-600 mb-2">{selectedVehicle.driver}</p>
-                        <p className="text-sm text-gray-500 mb-4">
-                            {selectedVehicle.address}
-                        </p>
+                        <p className="text-sm text-gray-500 mb-4">{selectedVehicle.address}</p>
 
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
                                 <Gauge size={18} className="text-blue-500" />
-                                <span className="font-medium">
-                                    Speed: {selectedVehicle.speed} mph
-                                </span>
+                                <span className="font-medium">Speed: {selectedVehicle.speed} mph</span>
                             </div>
+
                             <div className="flex items-center gap-2">
                                 <Fuel size={18} className="text-green-500" />
                                 <span className={`font-medium ${getFuelColor(selectedVehicle.fuelLevel)}`}>
                                     Fuel: {selectedVehicle.fuelLevel}%
                                 </span>
                             </div>
+
                             <div className="flex items-center gap-2">
                                 <Thermometer size={18} className="text-orange-500" />
                                 <span className={`font-medium ${getTempColor(selectedVehicle.engineTemp)}`}>
@@ -230,7 +253,7 @@ const MapView = ({ user }) => {
                         </div>
 
                         <button
-                            onClick={() => handleSelectVehicle(selectedVehicle)}
+                            onClick={() => centerMapOn(selectedVehicle.id)}
                             className="mt-4 flex items-center gap-2 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
                         >
                             <Crosshair size={16} /> Center Map
