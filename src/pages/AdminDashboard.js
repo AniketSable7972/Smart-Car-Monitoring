@@ -10,8 +10,13 @@ const AdminDashboard = () => {
     const generateVehicles = () => [
         {
             id: "CAR001",
+<<<<<<< HEAD
             driver: "Rajesh Kumar",
             location: "New Delhi, India",
+=======
+            driver: "John Doe",
+            location: "New York",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
@@ -20,8 +25,13 @@ const AdminDashboard = () => {
         },
         {
             id: "CAR002",
+<<<<<<< HEAD
             driver: "Priya Sharma",
             location: "Mumbai, Maharashtra",
+=======
+            driver: "Alice Smith",
+            location: "Chicago",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
@@ -30,8 +40,13 @@ const AdminDashboard = () => {
         },
         {
             id: "CAR003",
+<<<<<<< HEAD
             driver: "Amit Patel",
             location: "Ahmedabad, Gujarat",
+=======
+            driver: "Mike Johnson",
+            location: "Los Angeles",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             speed: Math.floor(Math.random() * 100),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),

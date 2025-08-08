@@ -18,7 +18,11 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         {
             id: "A001",
             vehicleId: "CAR001",
+<<<<<<< HEAD
             driver: "Rajesh Kumar",
+=======
+            driver: "John Doe",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             type: "fuel",
             severity: "high",
             status: "active",
@@ -29,7 +33,11 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         {
             id: "A002",
             vehicleId: "CAR002",
+<<<<<<< HEAD
             driver: "Priya Sharma",
+=======
+            driver: "Alice Smith",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             type: "temperature",
             severity: "critical",
             status: "acknowledged",
@@ -40,7 +48,11 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         {
             id: "A003",
             vehicleId: "CAR003",
+<<<<<<< HEAD
             driver: "Amit Patel",
+=======
+            driver: "Mike Johnson",
+>>>>>>> 48e95dcd9674235d4f845faf53ace9767b33505e
             type: "maintenance",
             severity: "medium",
             status: "resolved",
