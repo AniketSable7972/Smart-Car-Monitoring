@@ -1,10 +1,10 @@
+// LoginPage.js
 import React, { useState } from "react";
 import { Car, AlertCircle } from "lucide-react";
 
 const LoginPage = ({ onLogin }) => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [selectedRole, setSelectedRole] = useState("DRIVER");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
@@ -32,13 +32,13 @@ const LoginPage = ({ onLogin }) => {
 
         setTimeout(() => {
             const user = users.find(
-                (u) => u.username === username && u.password === password && u.role === selectedRole
+                (u) => u.username === username && u.password === password
             );
 
             if (user) {
                 onLogin(user);
             } else {
-                setError("Invalid credentials or role mismatch");
+                setError("Invalid username or password");
             }
 
             setIsLoading(false);
@@ -87,18 +87,6 @@ const LoginPage = ({ onLogin }) => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                         />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Role</label>
-                        <select
-                            className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value)}
-                        >
-                            <option value="DRIVER">Driver</option>
-                            <option value="ADMIN">Administrator</option>
-                        </select>
                     </div>
 
                     <button

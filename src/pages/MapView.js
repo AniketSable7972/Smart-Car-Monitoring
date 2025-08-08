@@ -1,25 +1,46 @@
-// MapView.js
-import React, { useState, useEffect, useRef } from "react";
+// MapView.js with a hardcoded user role
+import React, { useState, useEffect } from "react";
 import {
     MapPin,
     RefreshCcw,
-    Crosshair,
-    ZoomIn,
-    ZoomOut,
     Car,
     Gauge,
     Fuel,
-    Thermometer
+    Thermometer,
+    LogOut
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-const MapView = ({ user }) => {
-    const [vehicles] = useState([
+// Fix for default marker icon missing in some setups
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
+
+// A custom component to handle centering the map
+const ChangeView = ({ center }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (center) {
+            map.flyTo(center, map.getZoom());
+        }
+    }, [center, map]);
+    return null;
+};
+
+const MapView = () => {
+    // Hardcoded vehicle data
+    const allVehicles = [
         {
             id: "CAR001",
-            driver: "John Doe",
-            lat: 40.7128,
-            lng: -74.0060,
-            address: "New York, NY",
+            driver: "Rajesh Kumar",
+            lat: 28.6139, // New Delhi
+            lng: 77.2090,
+            address: "New Delhi, India",
             speed: 55,
             fuelLevel: 70,
             engineTemp: 95,
@@ -27,10 +48,10 @@ const MapView = ({ user }) => {
         },
         {
             id: "CAR002",
-            driver: "Alice Smith",
-            lat: 34.0522,
-            lng: -118.2437,
-            address: "Los Angeles, CA",
+            driver: "Priya Sharma",
+            lat: 19.0760, // Mumbai
+            lng: 72.8777,
+            address: "Mumbai, Maharashtra",
             speed: 60,
             fuelLevel: 40,
             engineTemp: 105,
@@ -38,46 +59,46 @@ const MapView = ({ user }) => {
         },
         {
             id: "CAR003",
-            driver: "Mike Johnson",
-            lat: 41.8781,
-            lng: -87.6298,
-            address: "Chicago, IL",
+            driver: "Amit Patel",
+            lat: 23.0225, // Ahmedabad
+            lng: 72.5714,
+            address: "Ahmedabad, Gujarat",
             speed: 45,
             fuelLevel: 20,
             engineTemp: 110,
             status: "maintenance"
         }
-    ]);
+    ];
 
+    // --- Hardcoded User State ---
+    // The application now starts with a user already defined.
+    // To switch the view, change the `hardcodedUser` object below.
+    // Uncomment the 'admin' user to view the full fleet.
+    // Uncomment the 'driver' user to view only CAR001.
+    
+    // Admin user: sees all vehicles
+    const hardcodedUser = { username: "admin1", role: "admin" };
+    
+    // Driver user: sees only their assigned vehicle (CAR001)
+    // const hardcodedUser = { username: "driver1", role: "driver", vehicleId: "CAR001" };
+
+    const [user, setUser] = useState(hardcodedUser);
+
+    // Filter vehicles based on the hardcoded user's role
+    const vehiclesToShow = user?.role === "driver"
+        ? allVehicles.filter(v => v.id === user.vehicleId)
+        : allVehicles;
+
+    // Use state to manage the selected vehicle
     const [selectedVehicle, setSelectedVehicle] = useState(null);
-    const [zoom, setZoom] = useState(1);
-    const mapContainerRef = useRef(null);
-
-    // filter vehicles by role
-    const filteredVehicles =
-        user.role === "DRIVER"
-            ? vehicles.filter((v) => v.id === user.assignedCarId)
-            : vehicles;
-
-    // auto-select for drivers
     useEffect(() => {
-        if (user.role === "DRIVER" && filteredVehicles.length > 0) {
-            setSelectedVehicle(filteredVehicles[0]);
+        // Automatically select the first vehicle from the filtered list on initial load
+        if (vehiclesToShow.length > 0) {
+            setSelectedVehicle(vehiclesToShow[0]);
         }
-    }, [user.role, filteredVehicles]);
+    }, []);
 
-    // bounding box
-    const lats = filteredVehicles.map((v) => v.lat);
-    const lngs = filteredVehicles.map((v) => v.lng);
-    const maxLat = Math.max(...lats);
-    const minLat = Math.min(...lats);
-    const maxLng = Math.max(...lngs);
-    const minLng = Math.min(...lngs);
-
-    // convert to 0–100%
-    const toPercent = (value, min, max) => ((value - min) / (max - min)) * 100;
-
-    // styling helpers
+    // UI helper functions for styling
     const getStatusColor = (status) => {
         switch (status) {
             case "active":
@@ -95,21 +116,12 @@ const MapView = ({ user }) => {
     const getTempColor = (t) =>
         t <= 95 ? "text-green-600" : t <= 100 ? "text-yellow-600" : "text-red-600";
 
-    // center selected marker in scrollable area
-    const centerMapOn = (vehicleId) => {
-        const container = mapContainerRef.current;
-        if (!container) return;
-        const marker = container.querySelector(`[data-id="${vehicleId}"]`);
-        if (marker) {
-            marker.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-                inline: "center"
-            });
-        }
-    };
+    const defaultCenter = [20.5937, 78.9629]; // Central location for India
+    const mapCenter = selectedVehicle ? [selectedVehicle.lat, selectedVehicle.lng] : defaultCenter;
 
+    // The entire application UI is rendered directly
     return (
+    <div className="pt-16">
         <div className="p-6 bg-gray-100 min-h-screen flex flex-col md:flex-row gap-6">
 
             {/* Map Panel */}
@@ -117,7 +129,7 @@ const MapView = ({ user }) => {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-bold flex items-center gap-2">
                         <MapPin size={20} />
-                        {user.role === "DRIVER" ? "Vehicle Location" : "Fleet Map"}
+                        Fleet Map
                     </h2>
                     <button
                         onClick={() => window.location.reload()}
@@ -127,101 +139,73 @@ const MapView = ({ user }) => {
                     </button>
                 </div>
 
-                {/* Scrollable Grid Container */}
-                <div
-                    ref={mapContainerRef}
-                    className="relative w-full h-96 border rounded overflow-auto bg-gray-50"
-                >
-                    {/* Scalable Content */}
-                    <div
-                        className="relative w-full h-full"
-                        style={{
-                            backgroundImage:
-                                "linear-gradient(0deg, transparent 24%, rgba(0,0,0,0.05) 25%)," +
-                                "linear-gradient(90deg, transparent 24%, rgba(0,0,0,0.05) 25%)",
-                            backgroundSize: "40px 40px",
-                            transform: `scale(${zoom})`,
-                            transformOrigin: "center center"
-                        }}
+                {/* Map Container */}
+                <div className="w-full h-96 border rounded overflow-hidden">
+                    <MapContainer
+                        center={mapCenter}
+                        zoom={selectedVehicle ? 13 : 4} // Zoom in on the vehicle if one is selected
+                        scrollWheelZoom={true}
+                        style={{ height: "100%", width: "100%" }}
                     >
-                        {filteredVehicles.map((v) => {
-                            const topPct = toPercent(maxLat - v.lat, maxLat - minLat);
-                            const leftPct = toPercent(v.lng, minLng, maxLng);
-                            return (
-                                <div
-                                    key={v.id}
-                                    data-id={v.id}
-                                    className={`absolute w-4 h-4 rounded-full cursor-pointer ${getStatusColor(v.status)}`}
-                                    style={{
-                                        top: `${topPct}%`,
-                                        left: `${leftPct}%`,
-                                        transform: "translate(-50%, -50%)"
-                                    }}
-                                    onClick={() => setSelectedVehicle(v)}
-                                    title={`${v.id}\n${v.address}`}
-                                />
-                            );
-                        })}
-
-                        {/* Crosshair */}
-                        <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                            <Crosshair className="text-gray-400" size={32} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Zoom Controls */}
-                <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                    <button
-                        className="bg-white p-2 rounded shadow hover:bg-gray-100"
-                        onClick={() => setZoom((z) => z + 0.1)}
-                    >
-                        <ZoomIn size={16} />
-                    </button>
-                    <button
-                        className="bg-white p-2 rounded shadow hover:bg-gray-100"
-                        onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
-                    >
-                        <ZoomOut size={16} />
-                    </button>
-                </div>
-
-                <div className="absolute bottom-4 left-4 bg-white px-3 py-1 rounded shadow text-sm">
-                    Map Type: <span className="font-semibold">Grid View</span>
+                        <ChangeView center={mapCenter} />
+                        <TileLayer
+                            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        {vehiclesToShow.map((v) => (
+                            <Marker
+                                key={v.id}
+                                position={[v.lat, v.lng]}
+                                eventHandlers={{
+                                    click: () => setSelectedVehicle(v),
+                                }}
+                            >
+                                <Popup>
+                                    <div>
+                                        <h4 className="font-bold">{v.id}</h4>
+                                        <p>{v.address}</p>
+                                        <span
+                                            className={`text-xs px-2 py-1 rounded text-white ${getStatusColor(v.status)}`}
+                                        >
+                                            {v.status}
+                                        </span>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
+                    </MapContainer>
                 </div>
             </div>
 
             {/* Sidebar */}
             <div className="w-full md:w-1/3 flex flex-col gap-4">
-                {user.role === "ADMIN" && (
-                    <div className="bg-white p-4 rounded-lg shadow">
-                        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                            <Car size={18} /> Fleet Vehicles
-                        </h3>
-                        <ul className="space-y-2">
-                            {filteredVehicles.map((v) => (
-                                <li
-                                    key={v.id}
-                                    onClick={() => setSelectedVehicle(v)}
-                                    className={`p-3 rounded border cursor-pointer flex justify-between items-center ${selectedVehicle?.id === v.id ? "bg-blue-50 border-blue-500" : "hover:bg-gray-50"
-                                        }`}
+                <div className="bg-white p-4 rounded-lg shadow">
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <Car size={18} /> Fleet Vehicles
+                    </h3>
+                    <ul className="space-y-2">
+                        {vehiclesToShow.map((v) => (
+                            <li
+                                key={v.id}
+                                onClick={() => setSelectedVehicle(v)}
+                                className={`p-3 rounded border cursor-pointer flex justify-between items-center ${selectedVehicle?.id === v.id ? "bg-blue-50 border-blue-500" : "hover:bg-gray-50"
+                                    }`}
+                            >
+                                <div>
+                                    <p className="font-medium">{v.id}</p>
+                                    <p className="text-sm text-gray-500 truncate">
+                                        {v.driver} – {v.address}
+                                    </p>
+                                </div>
+                                <span
+                                    className={`text-xs px-2 py-1 rounded text-white ${getStatusColor(v.status)}`}
                                 >
-                                    <div>
-                                        <p className="font-medium">{v.id}</p>
-                                        <p className="text-sm text-gray-500 truncate">
-                                            {v.driver} – {v.address}
-                                        </p>
-                                    </div>
-                                    <span
-                                        className={`text-xs px-2 py-1 rounded text-white ${getStatusColor(v.status)}`}
-                                    >
-                                        {v.status}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                                    {v.status}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
 
                 {selectedVehicle && (
                     <div className="bg-white p-4 rounded-lg shadow">
@@ -251,17 +235,11 @@ const MapView = ({ user }) => {
                                 </span>
                             </div>
                         </div>
-
-                        <button
-                            onClick={() => centerMapOn(selectedVehicle.id)}
-                            className="mt-4 flex items-center gap-2 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
-                        >
-                            <Crosshair size={16} /> Center Map
-                        </button>
                     </div>
                 )}
             </div>
         </div>
+    </div>
     );
 };
 

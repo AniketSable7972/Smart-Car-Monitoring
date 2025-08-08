@@ -10,8 +10,8 @@ const AdminDashboard = () => {
     const generateVehicles = () => [
         {
             id: "CAR001",
-            driver: "John Doe",
-            location: "New York",
+            driver: "Rajesh Kumar",
+            location: "New Delhi, India",
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
@@ -20,8 +20,8 @@ const AdminDashboard = () => {
         },
         {
             id: "CAR002",
-            driver: "Alice Smith",
-            location: "Chicago",
+            driver: "Priya Sharma",
+            location: "Mumbai, Maharashtra",
             speed: Math.floor(Math.random() * 80),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
@@ -30,8 +30,8 @@ const AdminDashboard = () => {
         },
         {
             id: "CAR003",
-            driver: "Mike Johnson",
-            location: "Los Angeles",
+            driver: "Amit Patel",
+            location: "Ahmedabad, Gujarat",
             speed: Math.floor(Math.random() * 100),
             fuel: Math.floor(Math.random() * 100),
             temp: Math.floor(Math.random() * 120),
@@ -85,6 +85,7 @@ const AdminDashboard = () => {
     };
 
     return (
+    <div className="pt-16">
         <div className="p-6 bg-gray-100 min-h-screen">
             <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
@@ -166,6 +167,7 @@ const AdminDashboard = () => {
 
             </table>
         </div>
+    </div>
     );
 };
 

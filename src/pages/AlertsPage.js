@@ -18,35 +18,35 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
         {
             id: "A001",
             vehicleId: "CAR001",
-            driver: "John Doe",
+            driver: "Rajesh Kumar",
             type: "fuel",
             severity: "high",
             status: "active",
             message: "Fuel level dropped below 20%",
             timestamp: new Date().toLocaleString(),
-            location: "New York"
+            location: "New Delhi, India"
         },
         {
             id: "A002",
             vehicleId: "CAR002",
-            driver: "Alice Smith",
+            driver: "Priya Sharma",
             type: "temperature",
             severity: "critical",
             status: "acknowledged",
             message: "Engine temperature exceeded 110°F",
             timestamp: new Date().toLocaleString(),
-            location: "Chicago"
+            location: "Mumbai, Maharashtra"
         },
         {
             id: "A003",
             vehicleId: "CAR003",
-            driver: "Mike Johnson",
+            driver: "Amit Patel",
             type: "maintenance",
             severity: "medium",
             status: "resolved",
             message: "Scheduled maintenance overdue",
             timestamp: new Date().toLocaleString(),
-            location: "Los Angeles"
+            location: "Ahmedabad, Gujarat"
         }
     ];
 
@@ -130,6 +130,7 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
     };
 
     return (
+    <div className="pt-16">
         <div className="p-6 bg-gray-100 min-h-screen">
             <h1 className="text-3xl font-bold mb-4">Alerts</h1>
 
@@ -248,6 +249,7 @@ const AlertsPage = ({ role, assignedVehicleId }) => {
                 </table>
             </div>
         </div>
+    </div>
     );
 };
 
