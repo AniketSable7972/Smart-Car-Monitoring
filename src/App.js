@@ -1,3 +1,4 @@
+// App.js
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
@@ -11,14 +12,16 @@ import SettingsPage from "./pages/SettingsPage";
 import Navigation from "./components/Navigation";
 
 function AppWrapper() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
 
     const handleLogin = (userData) => {
         setUser(userData);
+        if (userData.role === "ADMIN") {
+            navigate("/dashboard"); // AdminDashboard
+        } else if (userData.role === "DRIVER") {
+            navigate("/dashboard"); // DriverDashboard
+        }
     };
 
     const handleLogout = () => {
@@ -66,7 +69,7 @@ function AppWrapper() {
                         user={user}
                         onLogout={handleLogout}
                         onPageChange={handlePageChange}
-                        currentPage="" // optional, can be tracked with useLocation
+                        currentPage=""
                     />
                     <div className="page-content">
                         <Routes>
@@ -97,7 +100,6 @@ function AppWrapper() {
     );
 }
 
-// Wrap App with Router so useNavigate works
 export default function App() {
     return (
         <Router>
