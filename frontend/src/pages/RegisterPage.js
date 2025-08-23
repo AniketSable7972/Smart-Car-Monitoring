@@ -1,223 +1,213 @@
 // RegisterPage.js
-import React, { useState } from 'react';
-import api from '../api/client';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import api from "../api/client";
+import { useNavigate, Link } from "react-router-dom";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    username: '',
-    password: '',
-    role: 'DRIVER', // default role
-    name: '',
+    username: "",
+    password: "",
+    role: "DRIVER",
+    name: "",
     age: 25,
-    gender: 'MALE',
-    contactNumber: '',
-    email: '',
-    licenseNumber: ''
+    gender: "MALE",
+    contactNumber: "",
+    email: "",
+    licenseNumber: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState("");
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
-      // Validation
-      if (!form.username || form.username.length < 3) throw new Error('Username must be at least 3 characters');
-      if (!form.password || form.password.length < 6) throw new Error('Password must be at least 6 characters');
-      if (!form.name) throw new Error('Name is required');
-      if (!form.age || Number(form.age) < 18) throw new Error('Age must be at least 18');
-      if (!form.contactNumber) throw new Error('Contact number is required');
-      if (!form.email) throw new Error('Email is required');
-      if (!form.licenseNumber) throw new Error('License number is required');
+      if (!form.username || form.username.length < 3)
+        throw new Error("Username must be at least 3 characters");
+      if (!form.password || form.password.length < 6)
+        throw new Error("Password must be at least 6 characters");
+      if (!form.name) throw new Error("Name is required");
+      if (!form.age || Number(form.age) < 18)
+        throw new Error("Age must be at least 18");
+      if (!form.contactNumber)
+        throw new Error("Contact number is required");
+      if (!form.email) throw new Error("Email is required");
+      if (!form.licenseNumber)
+        throw new Error("License number is required");
 
-      // Payload with dynamic role
       const payload = {
-        username: form.username,
-        password: form.password,
-        role: form.role, // dynamic, not hardcoded
-        name: form.name,
+        ...form,
         age: Number(form.age),
-        gender: form.gender,
-        contactNumber: form.contactNumber,
-        email: form.email,
-        licenseNumber: form.licenseNumber
       };
 
-      const res = await api.post('/users/register', payload);
+      const res = await api.post("/users/register", payload);
       const user = res?.data?.data;
-      if (!user?.id) throw new Error(res?.data?.message || 'Registration failed');
+      if (!user?.id) throw new Error(res?.data?.message || "Registration failed");
 
-      setSuccess('Registered successfully! You can now log in.');
+      setSuccess("Registered successfully! You can now log in.");
       setForm({
-        username: '',
-        password: '',
-        role: 'DRIVER',
-        name: '',
+        username: "",
+        password: "",
+        role: "DRIVER",
+        name: "",
         age: 25,
-        gender: 'MALE',
-        contactNumber: '',
-        email: '',
-        licenseNumber: ''
+        gender: "MALE",
+        contactNumber: "",
+        email: "",
+        licenseNumber: "",
       });
     } catch (err) {
-      setError(err?.response?.data?.message || err.message || 'Failed to register');
+      setError(err?.response?.data?.message || err.message || "Failed to register");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="pt-16">
-      <div className="max-w-xl mx-auto p-6">
-        <div className="bg-white p-6 shadow rounded">
-          <h1 className="text-2xl font-bold mb-4">Create your account</h1>
-          {error && <div className="bg-red-100 text-red-700 p-2 mb-3 rounded">{error}</div>}
-          {success && <div className="bg-green-100 text-green-700 p-2 mb-3 rounded">{success}</div>}
-          <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
+      <div className="max-w-lg w-full bg-white/70 backdrop-blur-md p-8 rounded-2xl shadow-lg">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          Create your account
+        </h1>
 
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
-              <input
-                name="username"
-                placeholder="Enter username"
-                className="w-full border px-3 py-2 rounded"
-                value={form.username}
-                onChange={onChange}
-                required
-              />
-            </div>
+        {error && (
+          <div className="bg-red-100 text-red-700 p-3 mb-4 rounded-md text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 text-green-700 p-3 mb-4 rounded-md text-sm">
+            {success}
+          </div>
+        )}
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
-              <input
-                name="password"
-                type="password"
-                placeholder="Enter password"
-                className="w-full border px-3 py-2 rounded"
-                value={form.password}
-                onChange={onChange}
-                required
-              />
-            </div>
+        <form onSubmit={onSubmit} className="grid grid-cols-1 gap-4">
+          {/* Username */}
+          <input
+            name="username"
+            placeholder="Username"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.username}
+            onChange={onChange}
+            required
+          />
 
-            {/* Role Selection */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Role</label>
-              <select
-                name="role"
-                className="w-full border px-3 py-2 rounded"
-                value={form.role}
-                onChange={onChange}
-              >
-                <option value="DRIVER">Driver</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
+          {/* Password */}
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.password}
+            onChange={onChange}
+            required
+          />
 
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Full Name</label>
-              <input
-                name="name"
-                placeholder="Full Name"
-                className="w-full border px-3 py-2 rounded"
-                value={form.name}
-                onChange={onChange}
-                required
-              />
-            </div>
+          {/* Role */}
+          <select
+            name="role"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.role}
+            onChange={onChange}
+          >
+            <option value="DRIVER">Driver</option>
+            <option value="ADMIN">Admin</option>
+          </select>
 
-            {/* Age & Gender */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Age</label>
-                <input
-                  name="age"
-                  type="number"
-                  min="18"
-                  max="100"
-                  placeholder="Age"
-                  className="w-full border px-3 py-2 rounded"
-                  value={form.age}
-                  onChange={onChange}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Gender</label>
-                <select
-                  name="gender"
-                  className="w-full border px-3 py-2 rounded"
-                  value={form.gender}
-                  onChange={onChange}
-                >
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-            </div>
+          {/* Full Name */}
+          <input
+            name="name"
+            placeholder="Full Name"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.name}
+            onChange={onChange}
+            required
+          />
 
-            {/* Contact Number */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Contact Number</label>
-              <input
-                name="contactNumber"
-                placeholder="e.g. 9999999999"
-                className="w-full border px-3 py-2 rounded"
-                value={form.contactNumber}
-                onChange={onChange}
-                required
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <input
-                name="email"
-                type="email"
-                placeholder="Email"
-                className="w-full border px-3 py-2 rounded"
-                value={form.email}
-                onChange={onChange}
-                required
-              />
-            </div>
-
-            {/* License Number */}
-            <div>
-              <label className="block text-sm font-medium mb-1">License Number</label>
-              <input
-                name="licenseNumber"
-                placeholder="Enter vehicle license number"
-                className="w-full border px-3 py-2 rounded"
-                value={form.licenseNumber}
-                onChange={onChange}
-                required
-              />
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded"
-              disabled={loading}
+          {/* Age & Gender */}
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              name="age"
+              type="number"
+              min="18"
+              max="100"
+              placeholder="Age"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+              value={form.age}
+              onChange={onChange}
+              required
+            />
+            <select
+              name="gender"
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+              value={form.gender}
+              onChange={onChange}
             >
-              {loading ? 'Registering...' : 'Register'}
-            </button>
-          </form>
-        </div>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          {/* Contact Number */}
+          <input
+            name="contactNumber"
+            placeholder="Contact Number"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.contactNumber}
+            onChange={onChange}
+            required
+          />
+
+          {/* Email */}
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.email}
+            onChange={onChange}
+            required
+          />
+
+          {/* License Number */}
+          <input
+            name="licenseNumber"
+            placeholder="License Number"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.licenseNumber}
+            onChange={onChange}
+            required
+          />
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="w-full bg-blue-500 hover:bg-blue-600 transition text-white font-medium py-2 rounded-lg shadow-md"
+            disabled={loading}
+          >
+            {loading ? "Registering..." : "Register"}
+          </button>
+        </form>
+
+        {/* Login link */}
+        <p className="text-center text-gray-600 text-sm mt-4">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-blue-500 hover:underline font-medium"
+          >
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   );

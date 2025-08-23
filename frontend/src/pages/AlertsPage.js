@@ -3,13 +3,26 @@ import React, { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, Fuel, Thermometer, Wrench, Zap } from "lucide-react";
 import api from "../api/client";
 
-const formatDisplayTime = (ts) => new Date(ts).toLocaleString();
+const StatCard = ({ label, value, color }) => (
+  <div
+    className={`p-4 rounded-lg shadow bg-white border-l-4 ${color} flex flex-col`}
+  >
+    <span className="text-sm text-gray-500">{label}</span>
+    <span className="text-2xl font-bold">{value}</span>
+  </div>
+);
 
 const AlertsPage = ({ user }) => {
   const [alerts, setAlerts] = useState([]);
   const [carId, setCarId] = useState(null);
+  const [cars, setCars] = useState([]);
+  const [selectedCarId, setSelectedCarId] = useState("ALL");
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState("ALL");
+
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const alertsPerPage = 10;
 
   const loadDriverCar = async () => {
     if (user.role !== "DRIVER") return;
@@ -17,8 +30,18 @@ const AlertsPage = ({ user }) => {
       const dres = await api.get(`/drivers/user/${user.id}`);
       const d = dres?.data?.data;
       setCarId(d?.assignedCarId || null);
-    } catch (_) {
+    } catch {
       setCarId(null);
+    }
+  };
+
+  const loadCars = async () => {
+    if (user.role !== "ADMIN") return;
+    try {
+      const res = await api.get("/cars");
+      setCars(res?.data?.data || []);
+    } catch {
+      setCars([]);
     }
   };
 
@@ -29,13 +52,19 @@ const AlertsPage = ({ user }) => {
         const res = await api.get(`/alerts/car/${carId}`);
         setAlerts(res?.data?.data || []);
       } else {
-        const res = await api.get("/alerts");
-        setAlerts(res?.data?.data || []);
+        if (selectedCarId === "ALL") {
+          const res = await api.get("/alerts");
+          setAlerts(res?.data?.data || []);
+        } else {
+          const res = await api.get(`/alerts/car/${selectedCarId}`);
+          setAlerts(res?.data?.data || []);
+        }
       }
-    } catch (_) { }
+    } catch {
+      setAlerts([]);
+    }
   };
 
-  // Toggle acknowledgment only for admin
   const toggleAcknowledge = async (alertId, currentValue) => {
     if (user.role !== "ADMIN") return;
     try {
@@ -54,10 +83,12 @@ const AlertsPage = ({ user }) => {
 
   useEffect(() => {
     loadDriverCar();
+    loadCars();
   }, [user.id, user.role]);
+
   useEffect(() => {
     loadAlerts();
-  }, [carId, user.role]);
+  }, [carId, selectedCarId, user.role]);
 
   const getAlertIcon = (type) => {
     switch ((type || "").toLowerCase()) {
@@ -84,14 +115,33 @@ const AlertsPage = ({ user }) => {
     CRITICAL: "bg-red-200 text-red-800",
   };
 
-  // Filtered and searched alerts
+  const breakdown = useMemo(() => {
+    const counts = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+    alerts.forEach((a) => {
+      if (counts[a.severity] !== undefined) counts[a.severity]++;
+    });
+    return counts;
+  }, [alerts]);
+
   const filteredAlerts = useMemo(() => {
     return alerts.filter((a) => {
-      const matchesSearch = a.type.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSeverity = severityFilter === "ALL" || a.severity === severityFilter;
+      const matchesSearch = a.type
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesSeverity =
+        severityFilter === "ALL" || a.severity === severityFilter;
       return matchesSearch && matchesSeverity;
     });
   }, [alerts, searchTerm, severityFilter]);
+
+  // ✅ Pagination logic
+  const indexOfLastAlert = currentPage * alertsPerPage;
+  const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
+  const currentAlerts = filteredAlerts.slice(
+    indexOfFirstAlert,
+    indexOfLastAlert
+  );
+  const totalPages = Math.ceil(filteredAlerts.length / alertsPerPage);
 
   const renderTableRows = (alertList) =>
     alertList.map((a) => (
@@ -135,6 +185,46 @@ const AlertsPage = ({ user }) => {
       <div className="p-6 bg-gray-100 min-h-screen">
         <h1 className="text-3xl font-bold mb-4">Alerts</h1>
 
+        {/* Overview Section */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <StatCard
+            label="Total Alerts"
+            value={alerts.length}
+            color="border-blue-500"
+          />
+          <StatCard label="Low" value={breakdown.LOW} color="border-green-500" />
+          <StatCard
+            label="Medium"
+            value={breakdown.MEDIUM}
+            color="border-yellow-500"
+          />
+          <StatCard label="High" value={breakdown.HIGH} color="border-orange-500" />
+          <StatCard
+            label="Critical"
+            value={breakdown.CRITICAL}
+            color="border-red-500"
+          />
+        </div>
+
+        {/* Admin Car Dropdown */}
+        {user.role === "ADMIN" && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-3">Select Car</h2>
+            <select
+              className="px-4 py-2 rounded shadow border w-full md:w-1/3"
+              value={selectedCarId}
+              onChange={(e) => setSelectedCarId(e.target.value)}
+            >
+              <option value="ALL">All Cars</option>
+              {cars.map((car) => (
+                <option key={car.id} value={car.id}>
+                  {car.model || `Car ${car.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Search & Filter */}
         <div className="flex flex-col md:flex-row items-start md:items-center gap-3 mb-4">
           <input
@@ -157,6 +247,7 @@ const AlertsPage = ({ user }) => {
           </select>
         </div>
 
+        {/* Alerts Table */}
         <div className="overflow-x-auto bg-white rounded shadow">
           <table className="w-full border-collapse">
             <thead>
@@ -169,11 +260,14 @@ const AlertsPage = ({ user }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredAlerts.length > 0 ? (
-                renderTableRows(filteredAlerts)
+              {currentAlerts.length > 0 ? (
+                renderTableRows(currentAlerts)
               ) : (
                 <tr>
-                  <td className="p-3 text-gray-500" colSpan={user.role === "ADMIN" ? 5 : 4}>
+                  <td
+                    className="p-3 text-gray-500"
+                    colSpan={user.role === "ADMIN" ? 5 : 4}
+                  >
                     No alerts found.
                   </td>
                 </tr>
@@ -181,6 +275,30 @@ const AlertsPage = ({ user }) => {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-center gap-2 mt-3">
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            ◀ Prev
+          </button>
+
+          <span className="text-sm">
+            Page {currentPage} of {totalPages || 1}
+          </span>
+
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+          >
+            Next ▶
+          </button>
+        </div>
+
       </div>
     </div>
   );

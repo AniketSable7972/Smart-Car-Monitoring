@@ -1,6 +1,6 @@
 // MapView.js
-import React, { useState, useEffect } from "react";
-import { MapPin, RefreshCcw } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Car, Fuel, Thermometer, Gauge } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -41,8 +41,11 @@ const CITY_COORDS = {
 const MapView = ({ user }) => {
   const [cars, setCars] = useState([]);
   const [center, setCenter] = useState([40, -100]); // default center
+  const [selectedCar, setSelectedCar] = useState(null);
+  const [search, setSearch] = useState("");
+  const markerRefs = useRef({}); // store refs for each marker
 
-  // Fetch driver car with correct car name
+  // Fetch driver car
   const fetchDriverCar = async () => {
     try {
       const dRes = await api.get(`/drivers/user/${user.id}`);
@@ -51,12 +54,8 @@ const MapView = ({ user }) => {
         setCars([]);
         return;
       }
-
-      // Get car info
       const carRes = await api.get(`/cars/${driver.assignedCarId}`);
       const carInfo = carRes?.data?.data;
-
-      // Get latest telemetry
       const tRes = await api.get(
         `/telemetry/car/${driver.assignedCarId}/latest`
       );
@@ -73,8 +72,8 @@ const MapView = ({ user }) => {
       };
 
       setCars([car]);
-
-      if (car.location && CITY_COORDS[car.location]) setCenter(CITY_COORDS[car.location]);
+      if (car.location && CITY_COORDS[car.location])
+        setCenter(CITY_COORDS[car.location]);
     } catch (e) {
       console.error("Error fetching driver car:", e);
     }
@@ -110,8 +109,6 @@ const MapView = ({ user }) => {
       });
 
       setCars(combined);
-
-      // Center on first car with valid coords
       const firstLoc = combined.find((c) => CITY_COORDS[c.location]);
       if (firstLoc) setCenter(CITY_COORDS[firstLoc.location]);
     } catch (e) {
@@ -133,78 +130,145 @@ const MapView = ({ user }) => {
     return () => clearInterval(id);
   }, [user.id, user.role]);
 
-  if (user.role === "DRIVER" && cars.length === 0) {
+  // Safe search
+  const filteredCars = cars.filter((car) => {
+    const idStr = String(car.id || "").toLowerCase();
+    const driverStr = String(car.driver || "").toLowerCase();
     return (
-      <div className="pt-16">
-        <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow text-center max-w-md">
-            <h2 className="text-xl font-semibold mb-2">No vehicle assigned</h2>
-            <p className="text-gray-600">
-              You will see the map once a vehicle is assigned to you.
-            </p>
-          </div>
-        </div>
-      </div>
+      idStr.includes(search.toLowerCase()) ||
+      driverStr.includes(search.toLowerCase())
     );
-  }
+  });
 
+  // Handle card click → move map + open popup
   const handleCardClick = (car) => {
-    if (car.location && CITY_COORDS[car.location]) setCenter(CITY_COORDS[car.location]);
+    setSelectedCar(car);
+    if (car.location && CITY_COORDS[car.location]) {
+      setCenter(CITY_COORDS[car.location]);
+      const marker = markerRefs.current[car.id];
+      if (marker) marker.openPopup();
+    }
   };
 
   return (
     <div className="pt-16">
-      <div className="p-6 bg-gray-100 min-h-screen space-y-4">
-        {/* Car Cards */}
-        <div className="flex gap-4 overflow-x-auto">
-          {cars.map((car, idx) => (
-            <div
-              key={idx}
-              onClick={() => handleCardClick(car)}
-              className="cursor-pointer bg-white p-4 rounded shadow min-w-[200px] hover:shadow-lg transition"
-            >
-              <h4 className="font-bold text-lg">{car.id}</h4>
-              <p>Driver: {car.driver}</p>
-              <p>Location: {car.location}</p>
-              <p>Speed: {car.speed} km/h</p>
-              <p>Fuel: {car.fuel}%</p>
-              <p>Temp: {car.temp}°C</p>
-            </div>
-          ))}
-        </div>
-
+      <div className="p-6 bg-gray-100 min-h-screen grid grid-cols-3 gap-4">
         {/* Map */}
-        <div className="w-full h-96 border rounded overflow-hidden">
+        <div className="col-span-2 w-full h-[85vh] border rounded overflow-hidden">
           <MapContainer
             center={center}
             zoom={cars.length ? 13 : 4}
-            scrollWheelZoom={true}
+            scrollWheelZoom
             style={{ height: "100%", width: "100%" }}
           >
             <ChangeView center={center} />
             <TileLayer
-              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {cars.map((car, idx) => {
+            {filteredCars.map((car) => {
               const coords = CITY_COORDS[car.location];
               if (!coords) return null;
               return (
-                <Marker key={idx} position={coords}>
+                <Marker
+                  key={car.id}
+                  position={coords}
+                  ref={(ref) => (markerRefs.current[car.id] = ref)}
+                >
                   <Popup>
-                    <div>
-                      <h4 className="font-bold">Car {car.id}</h4>
-                      <p>Driver: {car.driver}</p>
-                      <p>Location: {car.location}</p>
-                      <p>Speed: {car.speed} km/h</p>
-                      <p>Fuel: {car.fuel}%</p>
-                      <p>Temp: {car.temp}°C</p>
+                    <div className="p-2">
+                      <h4 className="font-semibold text-blue-600 mb-1">
+                        🚗 Car {car.id}
+                      </h4>
+                      <p className="text-sm">👤 {car.driver}</p>
+                      <p className="text-xs text-gray-500">{car.location}</p>
+                      <div className="mt-2 flex justify-between text-xs">
+                        <span className="flex items-center gap-1">
+                          <Gauge size={12} /> {car.speed} km/h
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Fuel size={12} className="text-green-600" />{" "}
+                          {car.fuel}%
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Thermometer size={12} className="text-red-500" />{" "}
+                          {car.temp}°C
+                        </span>
+                      </div>
                     </div>
                   </Popup>
                 </Marker>
               );
             })}
           </MapContainer>
+        </div>
+
+        {/* Sidebar */}
+        <div className="col-span-1 bg-white rounded shadow p-4 flex flex-col">
+          {/* Search bar */}
+          <div className="flex items-center border border-gray-300 rounded-full px-3 py-2 mb-4 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
+            <Search size={18} className="text-gray-500 mr-2" />
+            <input
+              type="text"
+              placeholder="Search by driver or car ID"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full outline-none text-sm bg-transparent"
+            />
+          </div>
+
+          {/* Car List */}
+          <div className="space-y-3 overflow-y-auto flex-1 pr-2 custom-scrollbar">
+            {filteredCars.length === 0 ? (
+              <p className="text-gray-500">No cars found</p>
+            ) : (
+              filteredCars.map((car) => (
+                <div
+                  key={car.id}
+                  onClick={() => handleCardClick(car)}
+                  className={`p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md hover:border-blue-400 ${selectedCar?.id === car.id
+                      ? "bg-blue-50 border-blue-400"
+                      : "bg-white border-gray-200"
+                    }`}
+                >
+                  <h4 className="font-semibold text-lg flex items-center gap-2">
+                    <Car size={18} className="text-blue-600" /> {car.id}
+                  </h4>
+                  <p className="text-sm text-gray-600">👤 {car.driver}</p>
+                  <p className="text-xs text-gray-400">{car.location}</p>
+
+                  {/* Stats Row */}
+                  <div className="flex justify-between mt-2 text-sm">
+                    <span className="flex items-center gap-1">
+                      <Gauge size={14} className="text-gray-500" /> {car.speed}{" "}
+                      km/h
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Fuel size={14} className="text-green-600" /> {car.fuel}%
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Thermometer size={14} className="text-red-500" />{" "}
+                      {car.temp}°C
+                    </span>
+                  </div>
+
+                  {/* Conditional badges */}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {car.fuel < 20 && (
+                      <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                        Low Fuel
+                      </span>
+                    )}
+                    {car.temp > 90 && (
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                        Overheating
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

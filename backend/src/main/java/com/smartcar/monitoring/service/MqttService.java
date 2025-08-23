@@ -1,4 +1,3 @@
-// MqttService.java
 package com.smartcar.monitoring.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -200,22 +199,19 @@ public class MqttService {
             Alert createdAlert = null;
             if (telemetryDto.getFuelLevel() < 20) {
                 String msg = "Low fuel level: " + telemetryDto.getFuelLevel() + "%";
-                Alert.AlertSeverity sev = telemetryDto.getFuelLevel() < 10 ? Alert.AlertSeverity.CRITICAL
-                        : Alert.AlertSeverity.HIGH;
+                Alert.AlertSeverity sev = telemetryDto.getFuelLevel() < 10 ? Alert.AlertSeverity.CRITICAL : Alert.AlertSeverity.HIGH;
                 createdAlert = alertService.createAlert(car, "LOW_FUEL", sev.toString(), msg);
                 webSocketService.broadcastAlertUpdate(createdAlert);
             }
             if (telemetryDto.getTemperature() > 50) {
                 String msg = "High temperature: " + telemetryDto.getTemperature() + "°C";
-                Alert.AlertSeverity sev = telemetryDto.getTemperature() > 60 ? Alert.AlertSeverity.CRITICAL
-                        : Alert.AlertSeverity.HIGH;
+                Alert.AlertSeverity sev = telemetryDto.getTemperature() > 60 ? Alert.AlertSeverity.CRITICAL : Alert.AlertSeverity.HIGH;
                 createdAlert = alertService.createAlert(car, "HIGH_TEMPERATURE", sev.toString(), msg);
                 webSocketService.broadcastAlertUpdate(createdAlert);
             }
             if (telemetryDto.getSpeed() > 120) {
                 String msg = "High speed: " + telemetryDto.getSpeed() + " km/h";
-                Alert.AlertSeverity sev = telemetryDto.getSpeed() > 150 ? Alert.AlertSeverity.CRITICAL
-                        : Alert.AlertSeverity.MEDIUM;
+                Alert.AlertSeverity sev = telemetryDto.getSpeed() > 150 ? Alert.AlertSeverity.CRITICAL : Alert.AlertSeverity.MEDIUM;
                 createdAlert = alertService.createAlert(car, "HIGH_SPEED", sev.toString(), msg);
                 webSocketService.broadcastAlertUpdate(createdAlert);
             }

@@ -122,8 +122,7 @@ public class UserController {
 
     // PUT /api/users/{id} - Update user
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponseDto<UserDto>> updateUser(@PathVariable Long id,
-            @Valid @RequestBody UserDto userDto) {
+    public ResponseEntity<ApiResponseDto<UserDto>> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) {
         try {
             User updatedUser = userService.updateUser(id, userDto.toEntity());
             UserDto updatedUserDto = new UserDto(updatedUser);
@@ -185,7 +184,6 @@ public class UserController {
                 public final long totalUsers;
                 public final long adminUsers;
                 public final long driverUsers;
-
                 public UserStats(long totalUsers, long adminUsers, long driverUsers) {
                     this.totalUsers = totalUsers;
                     this.adminUsers = adminUsers;

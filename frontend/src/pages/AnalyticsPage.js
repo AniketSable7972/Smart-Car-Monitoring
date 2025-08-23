@@ -1,10 +1,10 @@
 // AnalyticsPage.js
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-    LineChart,
-    Line,
     BarChart,
     Bar,
+    LineChart,
+    Line,
     PieChart,
     Pie,
     Cell,
@@ -13,11 +13,11 @@ import {
     YAxis,
     CartesianGrid,
     Legend,
-    ResponsiveContainer
+    ResponsiveContainer,
 } from "recharts";
 import { TrendingUp, TrendingDown, Car, AlertTriangle } from "lucide-react";
+import api from "../api/client";
 
-// ✅ Utility function for readable timestamps
 const formatTimestamp = (ts) => {
     if (!ts) return "";
     return new Date(ts).toLocaleString("en-GB", {
@@ -25,335 +25,318 @@ const formatTimestamp = (ts) => {
         month: "short",
         year: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
     });
 };
+
+const getDateLimit = (range) => {
+    const d = new Date();
+    if (range === "Last 7 days") d.setDate(d.getDate() - 7);
+    else if (range === "Last 30 days") d.setDate(d.getDate() - 30);
+    else if (range === "Last 90 days") d.setDate(d.getDate() - 90);
+    else d.setFullYear(2000, 0, 1);
+    return d;
+};
+
+const COLORS = ["#0088FE", "#FF8042", "#00C49F", "#FFBB28", "#AA336A"];
 
 const AnalyticsPage = () => {
     const [vehicle, setVehicle] = useState("All Vehicles");
     const [timeRange, setTimeRange] = useState("Last 7 days");
+    const [telemetry, setTelemetry] = useState([]);
+    const [alerts, setAlerts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
-    // Example data (replace with API / SQL data later)
-    const fuelEfficiencyData = [
-        { day: "Mon", actual: 25, target: 28, vehicle: "CAR001", date: "2025-08-01T07:23:45.123Z" },
-        { day: "Tue", actual: 27, target: 28, vehicle: "CAR001", date: "2025-08-02T09:10:12.000Z" },
-        { day: "Wed", actual: 24, target: 28, vehicle: "CAR002", date: "2025-08-01T10:30:00.000Z" },
-        { day: "Thu", actual: 29, target: 28, vehicle: "CAR002", date: "2025-08-02T11:50:25.000Z" },
-        { day: "Fri", actual: 26, target: 28, vehicle: "CAR003", date: "2025-08-01T13:00:00.000Z" },
-        { day: "Sat", actual: 28, target: 28, vehicle: "CAR003", date: "2025-08-02T15:15:15.000Z" },
-        { day: "Sun", actual: 30, target: 28, vehicle: "CAR003", date: "2025-08-03T17:45:55.000Z" }
-    ];
+    useEffect(() => {
+        let mounted = true;
+        const load = async () => {
+            try {
+                setLoading(true);
+                const [tRes, aRes] = await Promise.all([api.get("/telemetry"), api.get("/alerts")]);
+                if (!mounted) return;
 
-    const speedData = [
-        { name: "CAR001", avg: 55, max: 80 },
-        { name: "CAR002", avg: 60, max: 90 },
-        { name: "CAR003", avg: 50, max: 70 }
-    ];
+                const t = (tRes?.data?.data || []).map((row) => ({
+                    ...row,
+                    vehicleId: row?.car?.displayId ?? row?.car?.id ?? String(row?.carId ?? "UNKNOWN"),
+                    ts: row?.timestamp,
+                }));
 
-    const tempData = [
-        { time: "6 AM", temp: 90, date: "2025-08-01T06:00:00.000Z" },
-        { time: "9 AM", temp: 100, date: "2025-08-01T09:00:00.000Z" },
-        { time: "12 PM", temp: 105, date: "2025-08-02T12:00:00.000Z" },
-        { time: "3 PM", temp: 110, date: "2025-08-02T15:00:00.000Z" },
-        { time: "6 PM", temp: 95, date: "2025-08-03T18:00:00.000Z" },
-        { time: "9 PM", temp: 85, date: "2025-08-03T21:00:00.000Z" }
-    ];
+                const a = (aRes?.data?.data || []).map((row) => ({
+                    ...row,
+                    vehicleId: row?.car?.displayId ?? row?.car?.id ?? String(row?.carId ?? "UNKNOWN"),
+                    ts: row?.timestamp,
+                }));
 
-    // ✅ Alert Distribution per vehicle
-    const alertDistributionData = {
-        "All Vehicles": [
-            { name: "Fuel", value: 30 },
-            { name: "Temperature", value: 20 },
-            { name: "Maintenance", value: 25 },
-            { name: "Speeding", value: 15 },
-            { name: "System", value: 10 }
-        ],
-        CAR001: [
-            { name: "Fuel", value: 15 },
-            { name: "Temperature", value: 10 },
-            { name: "Maintenance", value: 5 },
-            { name: "Speeding", value: 3 },
-            { name: "System", value: 2 }
-        ],
-        CAR002: [
-            { name: "Fuel", value: 10 },
-            { name: "Temperature", value: 5 },
-            { name: "Maintenance", value: 10 },
-            { name: "Speeding", value: 7 },
-            { name: "System", value: 3 }
-        ],
-        CAR003: [
-            { name: "Fuel", value: 5 },
-            { name: "Temperature", value: 5 },
-            { name: "Maintenance", value: 10 },
-            { name: "Speeding", value: 5 },
-            { name: "System", value: 5 }
-        ]
-    };
+                setTelemetry(t);
+                setAlerts(a);
+                setLastUpdated(new Date());
+            } catch (e) {
+                console.error("Analytics fetch error:", e);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
-    const COLORS = ["#0088FE", "#FF8042", "#00C49F", "#FFBB28", "#AA336A"];
+    const vehicleOptions = useMemo(() => {
+        const set = new Set(telemetry.map((r) => r.vehicleId));
+        return Array.from(set).sort();
+    }, [telemetry]);
 
-    // Helper to compute date limit
-    const getDateLimit = (range) => {
-        const today = new Date();
-        switch (range) {
-            case "Last 7 days":
-                return new Date(today.setDate(today.getDate() - 7));
-            case "Last 30 days":
-                return new Date(today.setDate(today.getDate() - 30));
-            case "Last 90 days":
-                return new Date(today.setDate(today.getDate() - 90));
-            default:
-                return new Date("2000-01-01");
-        }
-    };
+    const dateLimit = useMemo(() => getDateLimit(timeRange), [timeRange]);
 
-    const dateLimit = getDateLimit(timeRange);
+    const filteredTelemetry = useMemo(() => {
+        return telemetry.filter((r) => {
+            const tsOk = r.ts ? new Date(r.ts) >= dateLimit : false;
+            const vehOk = vehicle === "All Vehicles" || r.vehicleId === vehicle;
+            return tsOk && vehOk;
+        });
+    }, [telemetry, dateLimit, vehicle]);
 
-    // Filters
-    const filteredFuelData = fuelEfficiencyData.filter((entry) => {
-        const entryDate = new Date(entry.date);
-        const matchesVehicle = vehicle === "All Vehicles" || entry.vehicle === vehicle;
-        return matchesVehicle && entryDate >= dateLimit;
-    });
+    const filteredAlerts = useMemo(() => {
+        return alerts.filter((r) => {
+            const tsOk = r.ts ? new Date(r.ts) >= dateLimit : false;
+            const vehOk = vehicle === "All Vehicles" || r.vehicleId === vehicle;
+            return tsOk && vehOk;
+        });
+    }, [alerts, dateLimit, vehicle]);
 
-    const filteredSpeedData = speedData.filter(
-        (entry) => vehicle === "All Vehicles" || entry.name === vehicle
-    );
+    const speedByVehicle = useMemo(() => {
+        const agg = new Map();
+        filteredTelemetry.forEach((r) => {
+            const v = r.vehicleId;
+            if (!agg.has(v)) agg.set(v, { total: 0, count: 0, max: 0 });
+            const a = agg.get(v);
+            a.total += Number(r.speed ?? 0);
+            a.count += 1;
+            a.max = Math.max(a.max, Number(r.speed ?? 0));
+        });
+        return Array.from(agg.entries()).map(([name, v]) => ({
+            name,
+            avg: v.count ? Number((v.total / v.count).toFixed(2)) : 0,
+            max: v.max,
+        }));
+    }, [filteredTelemetry]);
 
-    const filteredTempData = tempData.filter(
-        (entry) => new Date(entry.date) >= dateLimit
-    );
+    const tempSeries = useMemo(() => {
+        return filteredTelemetry
+            .filter((r) => r.ts)
+            .map((r) => ({
+                time: formatTimestamp(r.ts),
+                temp: Number(r.temperature ?? 0),
+                date: r.ts,
+            }))
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+    }, [filteredTelemetry]);
 
-    const filteredAlertData =
-        alertDistributionData[vehicle] || alertDistributionData["All Vehicles"];
+    const alertsPie = useMemo(() => {
+        const byType = new Map();
+        filteredAlerts.forEach((a) => {
+            const key = a.type || "Unknown";
+            byType.set(key, (byType.get(key) || 0) + 1);
+        });
+        const rows = Array.from(byType.entries()).map(([name, value]) => ({ name, value }));
+        return rows.length ? rows : [{ name: "No Alerts", value: 1 }];
+    }, [filteredAlerts]);
+
+    const tempPoints = tempSeries.length;
+    const totalAlerts = alertsPie.reduce((s, x) => s + x.value, 0);
+
+    const secondsAgo = lastUpdated ? Math.floor((new Date() - lastUpdated) / 1000) : null;
 
     return (
         <div className="pt-16">
             <div className="p-6 bg-gray-100 min-h-screen">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold">Fleet Analytics</h1>
-                    <p className="text-gray-600">
-                        Comprehensive insights and performance metrics for your fleet
-                    </p>
+                <div className="mb-6 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold">Fleet Analytics</h1>
+                        <p className="text-gray-600">
+                            Comprehensive insights and performance metrics for your fleet
+                        </p>
+                    </div>
+                    {secondsAgo !== null && (
+                        <span className="text-gray-500 text-sm">Last updated: {secondsAgo}s ago</span>
+                    )}
                 </div>
 
                 {/* Filters */}
                 <div className="flex flex-wrap gap-4 mb-6">
-                    <select
-                        className="border px-4 py-2 rounded"
-                        value={vehicle}
-                        onChange={(e) => setVehicle(e.target.value)}
-                    >
+                    <select className="border px-4 py-2 rounded" value={vehicle} onChange={(e) => setVehicle(e.target.value)}>
                         <option>All Vehicles</option>
-                        <option>CAR001</option>
-                        <option>CAR002</option>
-                        <option>CAR003</option>
+                        {vehicleOptions.map((v) => (
+                            <option key={v}>{v}</option>
+                        ))}
                     </select>
 
-                    <select
-                        className="border px-4 py-2 rounded"
-                        value={timeRange}
-                        onChange={(e) => setTimeRange(e.target.value)}
-                    >
+                    <select className="border px-4 py-2 rounded" value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
                         <option>Last 7 days</option>
                         <option>Last 30 days</option>
                         <option>Last 90 days</option>
                     </select>
                 </div>
 
-                {/* Key Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded shadow flex justify-between items-center">
-                        <div>
-                            <h2 className="text-gray-600">Fleet Efficiency (MPG)</h2>
-                            <p className="text-2xl font-bold">
-                                {(
-                                    filteredFuelData.reduce((sum, d) => sum + d.actual, 0) /
-                                    filteredFuelData.length || 0
-                                ).toFixed(1)}
-                            </p>
-                            <p className="text-green-600 flex items-center">
-                                <TrendingUp size={16} className="mr-1" /> +5%
-                            </p>
+                {loading ? (
+                    <div className="bg-white p-6 rounded shadow text-gray-500">Loading analytics…</div>
+                ) : (
+                    <>
+                        {/* KPI Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            {/* Total Vehicles */}
+                            <div className="bg-white p-4 rounded shadow flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-gray-600">Total Vehicles</h2>
+                                    <p className="text-2xl font-bold">{vehicleOptions.length}</p>
+                                </div>
+                                <Car size={32} className="text-blue-500" />
+                            </div>
+
+                            {/* Average Engine Temp */}
+                            <div className="bg-white p-4 rounded shadow flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-gray-600">Avg Engine Temp (°C)</h2>
+                                    <p className="text-2xl font-bold">
+                                        {filteredTelemetry.length
+                                            ? (
+                                                filteredTelemetry.reduce((s, x) => s + Number(x.temperature ?? 0), 0) /
+                                                filteredTelemetry.length
+                                            ).toFixed(1)
+                                            : 0}
+                                    </p>
+                                </div>
+                                <TrendingDown size={32} className="text-red-500" />
+                            </div>
+
+                            {/* Existing KPI: Temp Samples */}
+                            <div className="bg-white p-4 rounded shadow flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-gray-600">Temp Samples</h2>
+                                    <p className="text-2xl font-bold">{tempPoints}</p>
+                                </div>
+                                <Car size={32} className="text-yellow-500" />
+                            </div>
+
+                            {/* Existing KPI: Active Alerts */}
+                            <div className="bg-white p-4 rounded shadow flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-gray-600">Active Alerts</h2>
+                                    <p className="text-2xl font-bold text-red-500">{totalAlerts}</p>
+                                </div>
+                                <AlertTriangle size={32} className="text-red-500" />
+                            </div>
                         </div>
-                        <Car size={32} className="text-blue-500" />
-                    </div>
 
-                    <div className="bg-white p-4 rounded shadow flex justify-between items-center">
-                        <div>
-                            <h2 className="text-gray-600">Total Records</h2>
-                            <p className="text-2xl font-bold">{filteredFuelData.length}</p>
-                            <p className="text-green-600 flex items-center">
-                                <TrendingUp size={16} className="mr-1" /> +8%
-                            </p>
-                        </div>
-                        <Car size={32} className="text-green-500" />
-                    </div>
 
-                    <div className="bg-white p-4 rounded shadow flex justify-between items-center">
-                        <div>
-                            <h2 className="text-gray-600">Active Hours (logs)</h2>
-                            <p className="text-2xl font-bold">{filteredTempData.length}</p>
-                            <p className="text-red-600 flex items-center">
-                                <TrendingDown size={16} className="mr-1" /> -3%
-                            </p>
-                        </div>
-                        <Car size={32} className="text-yellow-500" />
-                    </div>
+                        {/* Charts */}
+                        <div className="grid grid-cols-1 gap-6 mb-6">
+                            {/* Speed Analysis + Alerts */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                    <div className="bg-white p-4 rounded shadow flex justify-between items-center">
-                        <div>
-                            <h2 className="text-gray-600">Active Alerts</h2>
-                            <p className="text-2xl font-bold text-red-500">
-                                {filteredAlertData.reduce((sum, d) => sum + d.value, 0)}
-                            </p>
-                            <p className="text-red-600 flex items-center">
-                                <TrendingUp size={16} className="mr-1" /> +10%
-                            </p>
-                        </div>
-                        <AlertTriangle size={32} className="text-red-500" />
-                    </div>
-                </div>
+                                {/* Speed Analysis */}
+                                <div className="bg-white p-5 rounded-2xl shadow-md overflow-x-auto">
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-700">🚗 Speed Analysis by Vehicle</h3>
+                                    <div style={{ minWidth: `${speedByVehicle.length * 70}px` }}>
+                                        <ResponsiveContainer width="100%" height={280}>
+                                            <BarChart data={speedByVehicle}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                                <XAxis dataKey="name" interval={0} angle={-30} textAnchor="end" tick={{ fontSize: 12 }} />
+                                                <YAxis tick={{ fontSize: 12 }} />
+                                                <Tooltip contentStyle={{ borderRadius: "10px", boxShadow: "0px 2px 6px rgba(0,0,0,0.15)" }} />
+                                                <Legend />
+                                                <Bar
+                                                    dataKey="avg"
+                                                    fill="#3B82F6"
+                                                    name="Avg Speed"
+                                                    barSize={18}
+                                                    radius={[6, 6, 0, 0]}
+                                                    isAnimationActive={true}
+                                                    animationDuration={1200}
+                                                    animationEasing="ease-out"
+                                                />
+                                                <Bar
+                                                    dataKey="max"
+                                                    fill="#EF4444"
+                                                    name="Max Speed"
+                                                    barSize={18}
+                                                    radius={[6, 6, 0, 0]}
+                                                    isAnimationActive={true}
+                                                    animationDuration={1400}
+                                                    animationEasing="ease-out"
+                                                />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
 
-                {/* Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {/* Fuel Efficiency Trend */}
-                    <div className="bg-white p-4 rounded shadow">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Fuel Efficiency Trend
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <LineChart data={filteredFuelData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="day" />
-                                <YAxis />
-                                <Tooltip
-                                    labelFormatter={(label, payload) => {
-                                        if (payload && payload.length > 0) {
-                                            const entry = payload[0].payload;
-                                            return formatTimestamp(entry.date);
-                                        }
-                                        return label;
-                                    }}
-                                />
-                                <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="actual"
-                                    stroke="#0088FE"
-                                    name="Actual MPG"
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="target"
-                                    stroke="#FF0000"
-                                    strokeDasharray="5 5"
-                                    name="Target MPG"
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+                                {/* Alerts Pie */}
+                                <div className="bg-white p-5 rounded-2xl shadow-md">
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-700">⚠️ Alert Distribution</h3>
+                                    <ResponsiveContainer width="100%" height={280}>
+                                        <PieChart>
+                                            <Pie
+                                                data={alertsPie}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius={100}
+                                                label={({ name, value }) => `${name}: ${value}`}
+                                                isAnimationActive={true}
+                                                animationDuration={1500}
+                                                animationEasing="ease-in-out"
+                                            >
+                                                {alertsPie.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ borderRadius: "10px", boxShadow: "0px 2px 6px rgba(0,0,0,0.15)" }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
 
-                    {/* Speed Analysis */}
-                    <div className="bg-white p-4 rounded shadow">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Speed Analysis by Vehicle
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <BarChart data={filteredSpeedData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="avg" fill="#0088FE" name="Avg Speed" />
-                                <Bar dataKey="max" fill="#FF0000" name="Max Speed" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* Temperature Patterns */}
-                    <div className="bg-white p-4 rounded shadow">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Engine Temperature Patterns
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <LineChart data={filteredTempData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="time" />
-                                <YAxis />
-                                <Tooltip
-                                    labelFormatter={(label, payload) => {
-                                        if (payload && payload.length > 0) {
-                                            const entry = payload[0].payload;
-                                            return formatTimestamp(entry.date);
-                                        }
-                                        return label;
-                                    }}
-                                />
-                                <Line
-                                    type="monotone"
-                                    dataKey="temp"
-                                    stroke="#FF8042"
-                                    name="Temp (°F)"
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    {/* ✅ Alert Distribution */}
-                    <div className="bg-white p-4 rounded shadow">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Alert Distribution
-                        </h3>
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie
-                                    data={filteredAlertData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={80}
-                                    label
-                                >
-                                    {filteredAlertData.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={COLORS[index % COLORS.length]}
+                            {/* Engine Temperature Patterns full width */}
+                            <div className="bg-white p-5 rounded-2xl shadow-md">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-700">🌡️ Engine Temperature Patterns</h3>
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <LineChart data={tempSeries}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                        <XAxis
+                                            dataKey="time"
+                                            tickFormatter={(t) => new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            tick={{ fontSize: 12 }}
                                         />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                                        <YAxis tick={{ fontSize: 12 }} />
+                                        <Tooltip contentStyle={{ borderRadius: "10px", boxShadow: "0px 2px 6px rgba(0,0,0,0.15)" }} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="temp"
+                                            stroke="#F97316"
+                                            name="Temp (°C)"
+                                            strokeWidth={2.5}
+                                            dot={{ r: 3 }}
+                                            activeDot={{ r: 6, fill: "#F97316" }}
+                                            isAnimationActive={true}
+                                            animationDuration={2000}
+                                            animationEasing="ease-in-out"
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
 
-                {/* Fleet Performance Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                        <h4 className="font-semibold mb-2">✅ Performing Well</h4>
-                        <ul className="list-disc ml-5 text-green-700">
-                            <li>Vehicles meeting fuel efficiency targets</li>
-                            <li>Speeds within safe operating ranges</li>
-                            <li>Stable engine temperatures</li>
-                        </ul>
-                    </div>
-                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                        <h4 className="font-semibold mb-2">⚠️ Needs Attention</h4>
-                        <ul className="list-disc ml-5 text-red-700">
-                            <li>High alert counts in selected period</li>
-                            <li>Maintenance overdue reminders</li>
-                            <li>Temperature spikes detected</li>
-                        </ul>
-                    </div>
-                </div>
+
+
+                    </>
+                )}
             </div>
         </div>
     );
 };
 
 export default AnalyticsPage;
+

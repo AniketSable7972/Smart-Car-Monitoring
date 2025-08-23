@@ -25,8 +25,8 @@ public class CarController {
     @PostMapping
     public ResponseEntity<ApiResponseDto<CarDto>> createCar(@Valid @RequestBody CarDto carDto) {
         try {
-            Car car = new Car(carDto.getStatus(), carDto.getSpeed(), carDto.getFuelLevel(),
-                    carDto.getTemperature(), carDto.getLocation());
+            Car car = new Car(carDto.getStatus(), carDto.getSpeed(), carDto.getFuelLevel(), 
+                             carDto.getTemperature(), carDto.getLocation());
             Car createdCar = carService.createCar(car);
             CarDto createdCarDto = new CarDto(createdCar);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -69,8 +69,8 @@ public class CarController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponseDto<CarDto>> updateCar(@PathVariable Long id, @Valid @RequestBody CarDto carDto) {
         try {
-            Car car = new Car(carDto.getStatus(), carDto.getSpeed(), carDto.getFuelLevel(),
-                    carDto.getTemperature(), carDto.getLocation());
+            Car car = new Car(carDto.getStatus(), carDto.getSpeed(), carDto.getFuelLevel(), 
+                             carDto.getTemperature(), carDto.getLocation());
             car.setId(id);
             Car updatedCar = carService.updateCar(id, car);
             CarDto updatedCarDto = new CarDto(updatedCar);
@@ -107,8 +107,8 @@ public class CarController {
 
     // PUT /api/cars/{id}/assign-driver - Assign driver to car
     @PutMapping("/{id}/assign-driver")
-    public ResponseEntity<ApiResponseDto<CarDto>> assignDriverToCar(@PathVariable Long id,
-            @RequestParam Long driverId) {
+    public ResponseEntity<ApiResponseDto<CarDto>> assignDriverToCar(@PathVariable Long id, 
+                                                                   @RequestParam Long driverId) {
         try {
             Car car = carService.assignCarToDriver(id, driverId);
             CarDto carDto = new CarDto(car);
@@ -184,12 +184,11 @@ public class CarController {
             long totalCars = carService.countActiveCars();
             long availableCars = carService.countCarsWithoutDrivers();
             long assignedCars = carService.countCarsWithDrivers();
-
+            
             class CarStats {
                 public final long totalCars;
                 public final long availableCars;
                 public final long assignedCars;
-
                 public CarStats(long totalCars, long availableCars, long assignedCars) {
                     this.totalCars = totalCars;
                     this.availableCars = availableCars;
@@ -206,12 +205,12 @@ public class CarController {
 
     // POST /api/cars/{id}/update-telemetry - Update car telemetry data
     @PostMapping("/{id}/update-telemetry")
-    public ResponseEntity<ApiResponseDto<CarDto>> updateCarTelemetry(@PathVariable Long id,
-            @Valid @RequestBody CarDto carDto) {
+    public ResponseEntity<ApiResponseDto<CarDto>> updateCarTelemetry(@PathVariable Long id, 
+                                                                    @Valid @RequestBody CarDto carDto) {
         try {
-            Car updatedCar = carService.updateCarStatus(id, carDto.getStatus(), carDto.getSpeed(),
-                    carDto.getFuelLevel(), carDto.getTemperature(),
-                    carDto.getLocation());
+            Car updatedCar = carService.updateCarStatus(id, carDto.getStatus(), carDto.getSpeed(), 
+                                                       carDto.getFuelLevel(), carDto.getTemperature(), 
+                                                       carDto.getLocation());
             CarDto updatedCarDto = new CarDto(updatedCar);
             return ResponseEntity.ok(ApiResponseDto.success("Car telemetry updated successfully", updatedCarDto));
         } catch (Exception e) {

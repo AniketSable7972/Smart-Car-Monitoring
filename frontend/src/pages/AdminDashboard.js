@@ -1,14 +1,26 @@
 // AdminDashboard.js
 import React, { useState, useEffect, useMemo } from "react";
-import { FaMapMarkerAlt, FaGasPump, FaThermometerHalf } from "react-icons/fa";
+import {
+    FaMapMarkerAlt,
+    FaGasPump,
+    FaThermometerHalf,
+    FaSearch,
+    FaSyncAlt,
+    FaCar,
+    FaBell,
+    FaCheckCircle,
+} from "react-icons/fa";
 import api from "../api/client";
 
 const AdminDashboard = () => {
     const [vehicles, setVehicles] = useState([]);
     const [driversByCarId, setDriversByCarId] = useState({});
     const [searchTerm, setSearchTerm] = useState("");
-    const [autoRefresh, setAutoRefresh] = useState(true);
-    const [alertCounts, setAlertCounts] = useState({ totalAlerts: 0, unacknowledgedAlerts: 0, criticalAlerts: 0 });
+    const [alertCounts, setAlertCounts] = useState({
+        totalAlerts: 0,
+        unacknowledgedAlerts: 0,
+        criticalAlerts: 0,
+    });
 
     const fetchData = async () => {
         try {
@@ -24,7 +36,11 @@ const AdminDashboard = () => {
                 if (d.assignedCarId) acc[d.assignedCarId] = d.name || d.username;
                 return acc;
             }, {});
-            const counts = alertsStatsRes?.data?.data || { totalAlerts: 0, unacknowledgedAlerts: 0, criticalAlerts: 0 };
+            const counts = alertsStatsRes?.data?.data || {
+                totalAlerts: 0,
+                unacknowledgedAlerts: 0,
+                criticalAlerts: 0,
+            };
             const cars = carsRes?.data?.data || [];
 
             const rows = cars.map((car) => {
@@ -63,105 +79,133 @@ const AdminDashboard = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
     useEffect(() => {
-        if (!autoRefresh) return;
-        const interval = setInterval(fetchData, 30000);
-        return () => clearInterval(interval);
-    }, [autoRefresh]);
+        fetchData();
+    }, []);
 
-    const filteredVehicles = useMemo(() =>
-        vehicles.filter((v) =>
-            String(v.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-            String(v.driver).toLowerCase().includes(searchTerm.toLowerCase()) ||
-            String(v.location).toLowerCase().includes(searchTerm.toLowerCase())
-        ), [vehicles, searchTerm]
+    const filteredVehicles = useMemo(
+        () =>
+            vehicles.filter(
+                (v) =>
+                    String(v.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    String(v.driver).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    String(v.location).toLowerCase().includes(searchTerm.toLowerCase())
+            ),
+        [vehicles, searchTerm]
     );
 
     const activeCount = vehicles.filter((v) => v.status === "active").length;
     const idleCount = vehicles.filter((v) => v.status === "idle").length;
 
-    const getFuelColor = (fuel) => fuel > 50 ? "green" : fuel > 25 ? "orange" : "red";
-    const getTempColor = (temp) => temp <= 95 ? "green" : temp <= 100 ? "orange" : "red";
+    const getFuelColor = (fuel) =>
+        fuel > 50 ? "text-green-600" : fuel > 25 ? "text-yellow-500" : "text-red-500";
+    const getTempColor = (temp) =>
+        temp <= 95 ? "text-green-600" : temp <= 100 ? "text-yellow-500" : "text-red-500";
 
     return (
         <div className="pt-16">
             <div className="p-6 bg-gray-100 min-h-screen">
-                <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
+                <h1 className="text-3xl font-bold mb-6">🚘 Admin Dashboard</h1>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded shadow">
-                        <h2 className="text-lg font-bold">Active Vehicles</h2>
-                        <p className="text-2xl">{activeCount}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow flex items-center space-x-4">
+                        <FaCar className="text-green-500 text-3xl" />
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-600">Active Vehicles</h2>
+                            <p className="text-2xl font-bold">{activeCount}</p>
+                        </div>
                     </div>
-                    <div className="bg-white p-4 rounded shadow">
-                        <h2 className="text-lg font-bold">Idle Vehicles</h2>
-                        <p className="text-2xl">{idleCount}</p>
+                    <div className="bg-white p-6 rounded-2xl shadow flex items-center space-x-4">
+                        <FaCheckCircle className="text-yellow-500 text-3xl" />
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-600">Idle Vehicles</h2>
+                            <p className="text-2xl font-bold">{idleCount}</p>
+                        </div>
                     </div>
-                    <div className="bg-white p-4 rounded shadow">
-                        <h2 className="text-lg font-bold">Alerts</h2>
-                        <p className="text-2xl text-red-500">{alertCounts.totalAlerts}</p>
+                    <div className="bg-white p-6 rounded-2xl shadow flex items-center space-x-4">
+                        <FaBell className="text-red-500 text-3xl" />
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-600">Total Alerts</h2>
+                            <p className="text-2xl font-bold text-red-600">{alertCounts.totalAlerts}</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex justify-between items-center mb-6">
-                    <input
-                        type="text"
-                        placeholder="Search by ID, driver, or location"
-                        className="border px-4 py-2 rounded w-1/2"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <div className="text-sm text-gray-600">Auto refresh every 30s</div>
+                {/* Search & Controls */}
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div className="relative w-full md:w-1/2">
+                        <FaSearch className="absolute top-3 left-3 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by ID, driver, or location"
+                            className="border pl-10 pr-4 py-2 rounded-lg w-full shadow-sm focus:ring focus:ring-blue-200"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {/* Vehicle Table */}
-                <table className="w-full bg-white shadow rounded">
-                    <thead>
-                        <tr className="bg-gray-200 text-left">
-                            <th className="p-3">Car ID</th>
-                            <th className="p-3">Driver</th>
-                            <th className="p-3">Location</th>
-                            <th className="p-3">Speed (km/h)</th>
-                            <th className="p-3">Fuel Level</th>
-                            <th className="p-3">Engine Temp</th>
-                            <th className="p-3">Status</th>
-                            <th className="p-3">Last Update</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredVehicles.map((v, i) => (
-                            <tr key={i} className="border-b">
-                                <td className="p-3">{v.id}</td>
-                                <td className="p-3">{v.driver}</td>
-                                <td className="p-3 flex items-center">
-                                    <FaMapMarkerAlt className="text-blue-500 mr-2" />
-                                    {v.location}
-                                </td>
-                                <td className="p-3">{v.speed}</td>
-                                <td className="p-3 items-center">
-                                    <FaGasPump className="mr-2" />
-                                    <span style={{ color: getFuelColor(v.fuel) }}>{v.fuel}%</span>
-                                </td>
-                                <td className="p-3 items-center">
-                                    <FaThermometerHalf className="mr-2" />
-                                    <span style={{ color: getTempColor(v.temp) }}>{v.temp}°C</span>
-                                </td>
-                                <td className="p-3">
-                                    <span className={`px-2 py-1 rounded text-white ${v.status === "active" ? "bg-green-500"
-                                        : v.status === "idle" ? "bg-yellow-500"
-                                            : "bg-red-500"
-                                        }`}>
-                                        {v.status}
-                                    </span>
-                                </td>
-                                <td className="p-3">{v.lastUpdate}</td>
+                <div className="overflow-x-auto bg-white rounded-2xl shadow">
+                    <table className="w-full">
+                        <thead className="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th className="p-3 text-left">Car ID</th>
+                                <th className="p-3 text-left">Driver</th>
+                                <th className="p-3 text-left">Location</th>
+                                <th className="p-3 text-left">Speed</th>
+                                <th className="p-3 text-left">Fuel</th>
+                                <th className="p-3 text-left">Temp</th>
+                                <th className="p-3 text-left">Status</th>
+                                <th className="p-3 text-left">Last Update</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {filteredVehicles.map((v, i) => (
+                                <tr
+                                    key={i}
+                                    className="border-b hover:bg-gray-50 transition text-sm"
+                                >
+                                    <td className="p-3 font-semibold">{v.id}</td>
+                                    <td className="p-3">{v.driver}</td>
+                                    <td className="p-3 flex items-center gap-2">
+                                        <FaMapMarkerAlt className="text-blue-500" />
+                                        {v.location}
+                                    </td>
+                                    <td className="p-3">{v.speed} km/h</td>
+                                    <td className="p-3">
+                                        <div className="flex flex-col items-center">
+                                            <FaGasPump className="text-gray-600" />
+                                            <span className={getFuelColor(v.fuel)}>{v.fuel}%</span>
+                                        </div>
+                                    </td>
+
+                                    <td className="p-3">
+                                        <div className="flex flex-col items-center">
+                                            <FaThermometerHalf className="text-gray-600" />
+                                            <span className={getTempColor(v.temp)}>{v.temp}°C</span>
+                                        </div>
+                                    </td>
+
+                                    <td className="p-3">
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${v.status === "active"
+                                                ? "bg-green-500"
+                                                : v.status === "idle"
+                                                    ? "bg-yellow-500"
+                                                    : "bg-red-500"
+                                                }`}
+                                        >
+                                            {v.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 text-gray-600">{v.lastUpdate}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

@@ -128,7 +128,6 @@ const HistoryPage = ({ user }) => {
     );
   }
 
-
   return (
     <div className="pt-16">
       <div className="p-6 bg-gray-100 min-h-screen">
@@ -167,33 +166,53 @@ const HistoryPage = ({ user }) => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards with Progress Bars */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="bg-white p-3 rounded shadow flex items-center gap-3">
             <Gauge className="text-blue-500" size={28} />
-            <div>
+            <div className="w-full">
               <h2 className="text-gray-600">Avg Speed</h2>
               <p className="text-2xl font-bold">{stats?.averageSpeed ?? 0} km/h</p>
+              <div className="w-full bg-gray-200 h-2 rounded mt-1">
+                <div
+                  className="h-2 rounded bg-blue-500"
+                  style={{ width: `${Math.min(stats?.averageSpeed ?? 0, 120)}%` }}
+                />
+              </div>
               <p className="text-xs text-gray-500">
                 Min {stats?.minSpeed ?? 0} • Max {stats?.maxSpeed ?? 0}
               </p>
             </div>
           </div>
+
           <div className="bg-white p-3 rounded shadow flex items-center gap-3">
-            <Droplet className="text-blue-500" size={28} />
-            <div>
+            <Droplet className="text-green-500" size={28} />
+            <div className="w-full">
               <h2 className="text-gray-600">Avg Fuel</h2>
               <p className="text-2xl font-bold">{stats?.averageFuel ?? 0}%</p>
+              <div className="w-full bg-gray-200 h-2 rounded mt-1">
+                <div
+                  className="h-2 rounded bg-green-500"
+                  style={{ width: `${stats?.averageFuel ?? 0}%` }}
+                />
+              </div>
               <p className="text-xs text-gray-500">
                 Min {stats?.minFuel ?? 0}% • Max {stats?.maxFuel ?? 0}%
               </p>
             </div>
           </div>
+
           <div className="bg-white p-3 rounded shadow flex items-center gap-3">
-            <Thermometer className="text-blue-500" size={28} />
-            <div>
+            <Thermometer className="text-red-500" size={28} />
+            <div className="w-full">
               <h2 className="text-gray-600">Avg Temperature</h2>
               <p className="text-2xl font-bold">{stats?.averageTemperature ?? 0}°C</p>
+              <div className="w-full bg-gray-200 h-2 rounded mt-1">
+                <div
+                  className="h-2 rounded bg-red-500"
+                  style={{ width: `${Math.min(stats?.averageTemperature ?? 0, 120)}%` }}
+                />
+              </div>
               <p className="text-xs text-gray-500">
                 Min {stats?.minTemperature ?? 0}°C • Max {stats?.maxTemperature ?? 0}°C
               </p>
@@ -213,8 +232,8 @@ const HistoryPage = ({ user }) => {
                 <tr className="bg-gray-200 text-left">
                   <th className="p-2 border">Timestamp</th>
                   <th className="p-2 border">Speed (km/h)</th>
-                  <th className="p-2 border">Fuel (%)</th>
-                  <th className="p-2 border">Temp (°C)</th>
+                  <th className="p-2 border">Fuel</th>
+                  <th className="p-2 border">Temp</th>
                   <th className="p-2 border">Location</th>
                 </tr>
               </thead>
@@ -224,11 +243,50 @@ const HistoryPage = ({ user }) => {
                     <tr key={idx} className="hover:bg-gray-100">
                       <td className="p-2 border">{formatDisplayTime(t.timestamp)}</td>
                       <td className="p-2 border">{t.speed}</td>
-                      <td className="p-2 border">{t.fuelLevel}</td>
-                      <td className="p-2 border">{t.temperature}</td>
+
+                      {/* Fuel Badge */}
+                      <td className="p-2 border">
+                        <span
+                          className={`px-2 py-1 rounded text-white text-xs ${t.fuelLevel > 50
+                            ? "bg-green-500"
+                            : t.fuelLevel > 25
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                            }`}
+                        >
+                          {t.fuelLevel}%
+                        </span>
+                      </td>
+
+                      {/* Temp Badge */}
+                      <td className="p-2 border">
+                        <span
+                          className={`px-2 py-1 rounded text-white text-xs ${t.temperature <= 90
+                            ? "bg-green-500"
+                            : t.temperature <= 100
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                            }`}
+                        >
+                          {t.temperature}°C
+                        </span>
+                      </td>
+
+                      {/* Mini Map Preview */}
                       <td className="p-2 border flex items-center gap-1">
                         <MapPin size={16} className="text-red-500" />
-                        {t.location}
+                        {t.location ? (
+                          <a
+                            href={`https://www.google.com/maps?q=${t.location}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 underline"
+                          >
+                            {t.location}
+                          </a>
+                        ) : (
+                          "Unknown"
+                        )}
                       </td>
                     </tr>
                   ))
@@ -242,6 +300,7 @@ const HistoryPage = ({ user }) => {
               </tbody>
             </table>
           </div>
+
           {/* Pagination */}
           <div className="flex items-center justify-center gap-2 mt-3">
             <button
@@ -249,19 +308,22 @@ const HistoryPage = ({ user }) => {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              Prev
+              ◀ Prev
             </button>
+
             <span className="text-sm">
               Page {page} of {totalPages}
             </span>
+
             <button
               className="px-3 py-1 border rounded disabled:opacity-50"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
             >
-              Next
+              Next ▶
             </button>
           </div>
+
         </div>
       </div>
     </div>

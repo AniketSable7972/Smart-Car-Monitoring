@@ -27,7 +27,11 @@ const LoginPage = ({ onLogin }) => {
             localStorage.setItem("role", role);
             onLogin({ id: userId, username: uName, role, name });
         } catch (err) {
-            setError(err?.response?.data?.message || err.message || "Invalid username or password");
+            setError(
+                err?.response?.data?.message ||
+                err.message ||
+                "Invalid username or password"
+            );
         } finally {
             setIsLoading(false);
         }
@@ -35,20 +39,24 @@ const LoginPage = ({ onLogin }) => {
 
     return (
         <div className="pt-16">
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-200">
-                <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100">
+                <div className="bg-white/70 backdrop-blur-md shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-200">
                     {/* Header */}
                     <div className="flex flex-col items-center mb-6">
-                        <div className="bg-blue-500 p-3 rounded-full mb-4">
+                        <div className="bg-gradient-to-r from-indigo-400 to-purple-400 p-3 rounded-full mb-4 shadow-md">
                             <Car className="text-white" size={32} />
                         </div>
-                        <h1 className="text-2xl font-bold text-gray-800">Fleet Management System</h1>
-                        <p className="text-gray-500 text-sm">Sign in to access your dashboard</p>
+                        <h1 className="text-2xl font-bold text-gray-700">
+                            Fleet Management
+                        </h1>
+                        <p className="text-gray-500 text-sm mt-1">
+                            Sign in to access your dashboard
+                        </p>
                     </div>
 
                     {/* Error Alert */}
                     {error && (
-                        <div className="flex items-center bg-red-100 text-red-600 p-3 mb-4 rounded">
+                        <div className="flex items-center bg-red-50 text-red-600 p-3 mb-4 rounded-lg border border-red-200">
                             <AlertCircle className="mr-2" size={18} />
                             <span className="text-sm">{error}</span>
                         </div>
@@ -57,10 +65,12 @@ const LoginPage = ({ onLogin }) => {
                     {/* Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Username</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-600">
+                                Username
+                            </label>
                             <input
                                 type="text"
-                                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white/60"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
@@ -68,10 +78,12 @@ const LoginPage = ({ onLogin }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-1">Password</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-600">
+                                Password
+                            </label>
                             <input
                                 type="password"
-                                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white/60"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -80,7 +92,7 @@ const LoginPage = ({ onLogin }) => {
 
                         <button
                             type="submit"
-                            className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-70"
+                            className="w-full bg-gradient-to-r from-indigo-400 to-purple-400 text-white py-2 rounded-lg shadow hover:opacity-90 transition disabled:opacity-70"
                             disabled={isLoading}
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
@@ -88,9 +100,11 @@ const LoginPage = ({ onLogin }) => {
                     </form>
 
                     {/* Quick Links */}
-                    <div className="flex justify-between items-center mt-4 text-sm">
-                        <span className="text-gray-600">New driver?</span>
-                        <Link to="/register" className="text-blue-600 hover:underline">Register here</Link>
+                    <div className="flex justify-between items-center mt-5 text-sm">
+                        <span className="text-gray-500">New driver?</span>
+                        <Link to="/register" className="text-indigo-500 hover:underline">
+                            Register here
+                        </Link>
                     </div>
                 </div>
             </div>

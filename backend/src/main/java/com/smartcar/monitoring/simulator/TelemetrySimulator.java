@@ -1,4 +1,3 @@
-// TelemetrySimulator.java
 package com.smartcar.monitoring.simulator;
 
 import com.smartcar.monitoring.dto.TelemetryDto;
@@ -47,12 +46,12 @@ public class TelemetrySimulator {
 
     // Location coordinates for simulation (major cities)
     private final String[] locations = {
-            "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ",
-            "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA"
+        "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ",
+        "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA"
     };
 
     // Car statuses for simulation
-    private final String[] carStatuses = { "IDLE", "MOVING", "PARKED", "MAINTENANCE" };
+    private final String[] carStatuses = {"IDLE", "MOVING", "PARKED", "MAINTENANCE"};
 
     @PostConstruct
     public void init() {
@@ -72,7 +71,7 @@ public class TelemetrySimulator {
 
         try {
             List<Car> activeCars = carService.getAllActiveCars();
-
+            
             if (activeCars.isEmpty()) {
                 logger.warn("No active cars found for simulation");
                 return;
@@ -83,7 +82,7 @@ public class TelemetrySimulator {
                 if (car.getIsActive()) {
                     TelemetryDto telemetryDto = generateTelemetryData(car);
                     mqttService.publishTelemetry(car.getId(), telemetryDto);
-
+                    
                     // Update car status occasionally
                     if (random.nextInt(10) == 0) {
                         String newStatus = carStatuses[random.nextInt(carStatuses.length)];
@@ -99,7 +98,7 @@ public class TelemetrySimulator {
 
     private TelemetryDto generateTelemetryData(Car car) {
         TelemetryDto telemetryDto = new TelemetryDto();
-
+        
         // Generate realistic speed (0-140 km/h)
         int speed = generateSpeed();
         telemetryDto.setSpeed(speed);
@@ -123,10 +122,9 @@ public class TelemetrySimulator {
     }
 
     private int generateSpeed() {
-        // 70% chance of normal speed (0-80 km/h), 25% chance of highway speed (80-120
-        // km/h), 5% chance of high speed (120-140 km/h)
+        // 70% chance of normal speed (0-80 km/h), 25% chance of highway speed (80-120 km/h), 5% chance of high speed (120-140 km/h)
         double chance = random.nextDouble();
-
+        
         if (chance < 0.70) {
             return random.nextInt(81); // 0-80 km/h
         } else if (chance < 0.95) {
@@ -137,10 +135,9 @@ public class TelemetrySimulator {
     }
 
     private int generateFuelLevel() {
-        // 60% chance of normal fuel (20-100%), 30% chance of low fuel (10-30%), 10%
-        // chance of very low fuel (5-15%)
+        // 60% chance of normal fuel (20-100%), 30% chance of low fuel (10-30%), 10% chance of very low fuel (5-15%)
         double chance = random.nextDouble();
-
+        
         if (chance < 0.60) {
             return 20 + random.nextInt(81); // 20-100%
         } else if (chance < 0.90) {
@@ -151,10 +148,9 @@ public class TelemetrySimulator {
     }
 
     private int generateTemperature() {
-        // 80% chance of normal temperature (10-40°C), 15% chance of extreme temperature
-        // (40-70°C), 5% chance of cold (-10 to 10°C)
+        // 80% chance of normal temperature (10-40°C), 15% chance of extreme temperature (40-70°C), 5% chance of cold (-10 to 10°C)
         double chance = random.nextDouble();
-
+        
         if (chance < 0.80) {
             return 10 + random.nextInt(31); // 10-40°C
         } else if (chance < 0.95) {
